@@ -1,3 +1,7 @@
+/**
+ * Wrapper over Linux I2C functionality.
+ */
+
 #ifndef _I2C_H
 #define _I2C_H
 
