@@ -7,9 +7,13 @@
 
 #include <stdint.h>
 
+/** Log a `printf` style message at `LOG_L_DEBUG`. */
 #define LOG_DEBUG(...) log_record(__FILE_NAME__, LOG_L_DEBUG, __VA_ARGS__)
+/** Log a `printf` style message at `LOG_L_INFO`. */
 #define LOG_INFO(...) log_record(__FILE_NAME__, LOG_L_INFO, __VA_ARGS__)
+/** Log a `printf` style message at `LOG_L_WARN`. */
 #define LOG_WARN(...) log_record(__FILE_NAME__, LOG_L_WARN, __VA_ARGS__)
+/** Log a `printf` style message at `LOG_L_ERROR`. */
 #define LOG_ERROR(...) log_record(__FILE_NAME__, LOG_L_ERROR, __VA_ARGS__)
 
 /**
