@@ -1,6 +1,7 @@
 #include <stdint.h>
 
 #include "i2c.h"
+#include "log.h"
 #include "drivers/icm_20948.h"
 
 #define ICM_ERROR_MBIND(e) { i2c_error_t err = e; if (err != I2C_OK) { return err; } }
@@ -19,9 +20,11 @@ i2c_error_t icm_setup(i2c_bus_handle_t* bus, i2c_addr_t* dev, bool ad0) {
 	ICM_ERROR_MBIND(i2c_register_read(bus, *dev, ICM_WHO_AM_I, &who_am_i));
 
 	if (who_am_i != ICM_WHO_AM_I_RST) {
+		LOG_ERROR("Added IMU to the I2C bus, but the `WHO_AM_I` register was bad!");
 		return I2C_NO_DEVICE;
 	}
 	
+	LOG_INFO("Added IMU to the I2C bus succesfully.");
 	return I2C_OK;
 }
 

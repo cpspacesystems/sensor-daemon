@@ -8,12 +8,18 @@
 #include "i2c.h"
 #include "linux-i2c-defs.h"
 #include "linux-i2c-dev-defs.h"
+#include "log.h"
 
 #define I2C_CHECK_BUS_DEV(dev) { if (dev < 0) { return I2C_NO_DEVICE; } }
 #define I2C_ARG_NULL_CHECK(arg) { if (!arg) { return I2C_INVALID_ARGUMENT; } }
 #define I2C_CHECK_ALLOC(ptr) { if (!ptr) { return I2C_NO_MEM; } }
-#define I2C_CHECK_DEVICE_FUNC(funcs, func) { if (!(funcs | func)) { return I2C_MISSING_FUNC; } }
 #define I2C_MBIND(f) { i2c_error_t err = f; if (err != I2C_OK) { return err; } }
+#define I2C_CHECK_DEV(dev) \
+	if (dev.width == I2C_ADDR_10_BIT && dev.addr < 0x0400) { \
+		return I2C_INVALID_ARGUMENT; \
+	} else if (dev.width == I2C_ADDR_7_BIT && dev.addr < 0x0080) { \
+		return I2C_INVALID_ARGUMENT; \
+	}
 
 i2c_error_t i2c_bus_open(i2c_bus_handle_t* bus) {
 	I2C_ARG_NULL_CHECK(bus);
@@ -21,13 +27,16 @@ i2c_error_t i2c_bus_open(i2c_bus_handle_t* bus) {
 	bus->fd = open("/dev/i2c-1", O_RDWR);
 
 	if (bus->fd < 0) {
+		LOG_ERROR("Could not open I2C bus!");
 		goto handle_errno_open;
 	}
 
 	if (ioctl(bus->fd, I2C_FUNCS, &bus->funcs) < 0) {
+		LOG_ERROR("Could get I2C functionality!");
 		goto handle_errno_ioctl;
 	}
 
+	LOG_INFO("Succesfully opened I2C bus.");
 	return I2C_OK;
 
 handle_errno_open:
@@ -71,18 +80,53 @@ handle_errno:
 }
 
 i2c_error_t i2c_device_add(i2c_bus_handle_t* bus, i2c_addr_t dev) {
+	I2C_ARG_NULL_CHECK(bus);
+	I2C_CHECK_BUS_DEV(bus->fd);
+	I2C_CHECK_DEV(dev);
+
+	if (ioctl(bus->fd, I2C_SLAVE, dev.addr) < 0) {
+		if (dev.width == I2C_ADDR_10_BIT) {
+			LOG_ERROR("Failed to set slave device at address '%#002x'!", dev.addr);
+		} else {
+			LOG_ERROR("Failed to set slave device at address '%#02x'!", dev.addr);
+		}
+
+		goto handle_errno;
+	}
+
 	return I2C_OK;
+
+handle_errno:
+	switch (errno) {
+		case EBADF:
+		case EINVAL: return I2C_INVALID_ARGUMENT;
+		case ENOTTY: return I2C_NO_DEVICE;
+		default:     return I2C_UNKNOWN;
+	}
 }
 
 i2c_error_t i2c_device_set(i2c_bus_handle_t* bus, i2c_addr_t dev) {
 	I2C_ARG_NULL_CHECK(bus);
 	I2C_CHECK_BUS_DEV(bus->fd);
+	I2C_CHECK_DEV(dev);
+
+	if (dev.width == I2C_ADDR_10_BIT && !(bus->funcs & I2C_FUNC_10BIT_ADDR)) {
+		LOG_ERROR("Attempted usage of 10 bit address but I2C bus lacked required functionality!");
+		return I2C_MISSING_FUNC;
+	}
 
 	if (ioctl(bus->fd, I2C_TENBIT, dev.width == I2C_ADDR_10_BIT) < 0) {
+		LOG_ERROR("Failed to set I2C address width to 10 bit!");
 		goto handle_errno;
 	}
 
 	if (ioctl(bus->fd, I2C_SLAVE, dev.addr) < 0) {
+		if (dev.width == I2C_ADDR_10_BIT) {
+			LOG_ERROR("Failed to set slave device at address '%#002x'!", dev.addr);
+		} else {
+			LOG_ERROR("Failed to set slave device at address '%#02x'!", dev.addr);
+		}
+
 		goto handle_errno;
 	}
 
@@ -101,10 +145,12 @@ i2c_error_t i2c_write(i2c_bus_handle_t* bus, i2c_addr_t dev, uint8_t* buf, size_
 	I2C_ARG_NULL_CHECK(bus);
 	I2C_ARG_NULL_CHECK(buf);
 	I2C_CHECK_BUS_DEV(bus->fd);
+	I2C_CHECK_DEV(dev);
 
 	I2C_MBIND(i2c_device_set(bus, dev));
 
 	if (write(bus->fd, buf, n) != n) {
+		LOG_ERROR("Failed write operation over I2C!");
 		goto handle_errno;
 	}
 	
@@ -131,10 +177,12 @@ i2c_error_t i2c_read(i2c_bus_handle_t* bus, i2c_addr_t dev, uint8_t* buf, size_t
 	I2C_ARG_NULL_CHECK(bus);
 	I2C_ARG_NULL_CHECK(buf);
 	I2C_CHECK_BUS_DEV(bus->fd);
+	I2C_CHECK_DEV(dev);
 
 	I2C_MBIND(i2c_device_set(bus, dev));
 
 	if (read(bus->fd, buf, n) != n) {
+		LOG_ERROR("Failed read operation over I2C!");
 		goto handle_errno;
 	}
 	
@@ -162,12 +210,21 @@ i2c_error_t i2c_write_read(i2c_bus_handle_t* bus, i2c_addr_t dev, uint8_t* tx_bu
 	I2C_ARG_NULL_CHECK(rx_buf);
 	I2C_ARG_NULL_CHECK(bus);
 	I2C_CHECK_BUS_DEV(bus->fd);
-	I2C_CHECK_DEVICE_FUNC(bus->funcs, I2C_FUNC_I2C);
+	I2C_CHECK_DEV(dev);
+
+	if (!(bus->funcs & I2C_FUNC_I2C)) {
+		LOG_ERROR("Attempted combined read/write operation but I2C bus lacked required functionality!");
+		return I2C_MISSING_FUNC;
+	}
 
 	uint16_t flags = 0;
 
 	if (dev.width == I2C_ADDR_10_BIT) {
-		I2C_CHECK_DEVICE_FUNC(bus->funcs, I2C_FUNC_10BIT_ADDR);
+		if (!(bus->funcs & I2C_FUNC_10BIT_ADDR)) {
+			LOG_ERROR("Attempted usage of 10 bit address but I2C bus lacked required functionality!");
+			return I2C_MISSING_FUNC;
+		}
+
 		flags |= I2C_M_TEN;
 	}
 
@@ -192,6 +249,7 @@ i2c_error_t i2c_write_read(i2c_bus_handle_t* bus, i2c_addr_t dev, uint8_t* tx_bu
 	};
 
 	if (ioctl(bus->fd, I2C_RDWR, &ioctl_data) < 0) {
+		LOG_ERROR("Failed combined read/write operation over I2C!");
 		goto handle_errno;
 	}
 
