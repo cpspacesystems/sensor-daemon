@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 
 #include "i2c.h"
 #include "linux-i2c-defs.h"
@@ -21,10 +22,24 @@
 		return I2C_INVALID_ARGUMENT; \
 	}
 
-i2c_error_t i2c_bus_open(i2c_bus_handle_t* bus) {
+i2c_error_t i2c_bus_auto_find(char* device) {
+	struct stat stat_res;
+
+	for (uint16_t i2c_device = 0; i2c_device < 256; i2c_device++) {
+		sprintf(device, "/dev/i2c-%u", i2c_device);
+
+		if (stat(device, &stat_res) == 0) {
+			return I2C_OK;
+		}
+	}
+
+	return I2C_NO_BUS;
+}
+
+i2c_error_t i2c_bus_open(i2c_bus_handle_t* bus, const char* device) {
 	I2C_ARG_NULL_CHECK(bus);
 
-	bus->fd = open("/dev/i2c-1", O_RDWR);
+	bus->fd = open(device, O_RDWR);
 
 	if (bus->fd < 0) {
 		LOG_ERROR("Could not open I2C bus!");
