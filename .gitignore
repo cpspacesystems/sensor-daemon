@@ -1,1 +1,6 @@
 build
+include/.DS_Store
+src/.DS_Store
+.DS_Store
+sensor-daemon
+sensor-daemon.log
