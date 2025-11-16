@@ -4,15 +4,8 @@
 #include <unistd.h>
 
 #include "publish.h"
-#include "config.h"
 #include "sensor_frame.h"
 #include "log.h"
-#include "zenoh-pico/api/macros.h"
-#include "zenoh-pico/api/primitives.h"
-#include "zenoh-pico/api/types.h"
-#include "zenoh-pico/config.h"
-#include "zenoh-pico/utils/result.h"
-
 
 /*
  * Shared memory backend.
@@ -31,6 +24,7 @@
 
 #ifdef PUBLISH_ZENOH
 
+#include "config.h"
 #include <zenoh-pico.h>
 
 #endif  /* PUBLISH_ZENOH */

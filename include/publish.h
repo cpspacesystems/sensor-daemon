@@ -14,8 +14,8 @@
 
 #include "sensor_frame.h"
 
-// #define PUBLISH_SHARED_MEM
-#define PUBLISH_ZENOH
+#define PUBLISH_SHARED_MEM
+// #define PUBLISH_ZENOH
 
 
 /*
@@ -53,8 +53,8 @@
 typedef struct {
 #ifdef PUBLISH_SHARED_MEM
 	int mem_fd;
-	volatile pthread_mutex_t* mutex;
-	volatile sensor_frame_t* frame;
+	pthread_mutex_t* mutex;
+	sensor_frame_t* frame;
 #endif  /* PUBLISH_SHARED_MEM */
 
 #ifdef PUBLISH_ZENOH

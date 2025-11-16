@@ -16,9 +16,6 @@ sourceDirectory = "src"
 buildDirectory :: FilePath
 buildDirectory = "build"
 
-exportDirectory :: FilePath
-exportDirectory = "export"
-
 libraryDirectory :: FilePath
 libraryDirectory = "lib"
 
@@ -27,13 +24,9 @@ libraryDirectory = "lib"
 projectHeaders :: [Include]
 projectHeaders = [Include "include", Include "lib/include"]
 
--- | Headers for export compiling the exported static library.
-exportHeaders :: [Include]
-exportHeaders = [Include "include", Include "lib/include", Include "export/include"]
-
 -- | Headers which will be copied over to the build directory.
 copyHeaders :: [Include]
-copyHeaders = [Include "include", Include "export/include"]
+copyHeaders = [Include "include"]
 
 -- | Generate the GCC arguments to include headers from the given `Include`.
 include :: Include -> String
@@ -71,49 +64,41 @@ main = do
 
     -- Build static library export
     
-    exportExists <- doesDirectoryExist exportDirectory
+    exportSources <- filter (not . ("main.c" `isSuffixOf`)) <$> filesWithExtension ".c" sourceDirectory
+    maybeExBins <- forM exportSources (buildSourceFile (includeAll projectHeaders) (buildDirectory ++ "/export"))
+    let exBins = maybeExBins >>= maybeToList
+    let objectName = name ++ ".a.o"
+    let archiveName = "lib" ++ name ++ ".a"
 
-    if not exportExists then pure () else do
+    putStrLn $ "[compile] " ++ (buildDirectory ++ "/export") ++ "/* -> " ++ objectName
+    _ <- readProcess
+        "gcc"
+        ( "-o"
+        : (buildDirectory ++ "/export/" ++ name ++ ".a.o")
+        : "-Llib/"
+        : libs ++ bins ++ includeAll projectHeaders
+        ) ""
 
-        exSources <- filesWithExtension ".c" exportDirectory
+    putStrLn $ "[archive] " ++ buildDirectory ++ "/export/" ++ objectName ++ " -> " ++ buildDirectory ++ "export/" ++ archiveName
+    _ <- readProcess
+        "ar"
+        ( "rcs"
+        : (buildDirectory ++ "/export/" ++ archiveName)
+        : [buildDirectory ++ "/export/" ++ objectName]
+        ) ""
 
-        exBuildExists <- doesDirectoryExist (buildDirectory ++ "/export")
-        unless exBuildExists (createDirectory (buildDirectory ++ "/export"))
+    exIncludeExists <- doesDirectoryExist $ buildDirectory ++ "/export/include"
+    unless exIncludeExists (createDirectory (buildDirectory ++ "/export/include"))
 
-        maybeExBins <- forM exSources (buildSourceFile (includeAll exportHeaders) (buildDirectory ++ "/export"))
-        let exBins = maybeExBins >>= maybeToList
-        let objectName = name ++ ".a.o"
-        let archiveName = "lib" ++ name ++ ".a"
+    headers <- mapM (filesWithExtension ".h") (path <$> copyHeaders)
+    forM_ (concat headers) (\h -> case pathBasename h of
+        Just base -> do
+            putStrLn $ "[copy] " ++ h ++ " -> " ++ buildDirectory ++ "/export/include/" ++ base
+            readProcess "cp" [h, buildDirectory ++ "/export/include/"] ""
+        Nothing -> pure ""
+        )
 
-        putStrLn $ "[compile] " ++ (buildDirectory ++ "/export") ++ "/* -> " ++ objectName
-        _ <- readProcess
-            "gcc"
-            ( "-o"
-            : (buildDirectory ++ "/export/" ++ name ++ ".a.o")
-            : "-Llib/"
-            : libs ++ bins ++ includeAll exportHeaders
-            ) ""
-
-        putStrLn $ "[archive] " ++ buildDirectory ++ "/export/" ++ objectName ++ " -> " ++ buildDirectory ++ "export/" ++ archiveName
-        _ <- readProcess
-            "ar"
-            ( "rcs"
-            : (buildDirectory ++ "/export/" ++ archiveName)
-            : [buildDirectory ++ "/export/" ++ objectName]
-            ) ""
-
-        exIncludeExists <- doesDirectoryExist $ buildDirectory ++ "/export/include"
-        unless exIncludeExists (createDirectory (buildDirectory ++ "/export/include"))
-
-        headers <- mapM (filesWithExtension ".h") (path <$> copyHeaders)
-        forM_ (concat headers) (\h -> case pathBasename h of
-            Just base -> do
-                putStrLn $ "[copy] " ++ h ++ " -> " ++ buildDirectory ++ "/export/include/" ++ base
-                readProcess "cp" [h, buildDirectory ++ "/export/include/"] ""
-            Nothing -> pure ""
-            )
-
-        pure ()
+    pure ()
 
 pathBasename :: FilePath -> Maybe String
 pathBasename path = snd <$> unsnoc (splitPath path)
