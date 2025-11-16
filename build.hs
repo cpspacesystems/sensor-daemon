@@ -7,20 +7,50 @@ import Data.Maybe
 import Data.List (isSuffixOf, isPrefixOf, unsnoc)
 import Control.Monad
 
-includeArgs :: [String]
-includeArgs = ["-I", "include/", "-I", "lib/include/"]
+-- | A path to a director containing header files which can be included in a C project.
+newtype Include = Include { path :: FilePath }
 
-includeArgsExport :: [String]
-includeArgsExport = ["-I", "include/", "-I", "lib/include/", "-I", "export/include/"]
+sourceDirectory :: FilePath
+sourceDirectory = "src"
+
+buildDirectory :: FilePath
+buildDirectory = "build"
+
+exportDirectory :: FilePath
+exportDirectory = "export"
+
+libraryDirectory :: FilePath
+libraryDirectory = "lib"
+
+-- | Headers for the primary project. These will be included in the compilation of the executable
+-- binary for this project.
+projectHeaders :: [Include]
+projectHeaders = [Include "include", Include "lib/include"]
+
+-- | Headers for export compiling the exported static library.
+exportHeaders :: [Include]
+exportHeaders = [Include "include", Include "lib/include", Include "export/include"]
+
+-- | Headers which will be copied over to the build directory.
+copyHeaders :: [Include]
+copyHeaders = [Include "include", Include "export/include"]
+
+-- | Generate the GCC arguments to include headers from the given `Include`.
+include :: Include -> String
+include (Include path) = "-I" ++ path
+
+-- | Generate the GCC arguments to include all headers from all given `Include`s.
+includeAll :: [Include] -> [String]
+includeAll = fmap include
 
 main :: IO ()
 main = do
-    sources <- filesWithExtension ".c" "src"
+    sources <- filesWithExtension ".c" sourceDirectory
 
-    buildExists <- doesDirectoryExist "build"
-    unless buildExists (createDirectory "build")
+    buildExists <- doesDirectoryExist buildDirectory
+    unless buildExists (createDirectory buildDirectory)
 
-    maybeBins <- forM sources (buildSourceFile "build/" includeArgs)
+    maybeBins <- forM sources (buildSourceFile (includeAll projectHeaders) buildDirectory)
     let bins = maybeBins >>= maybeToList
     projDir <- getCurrentDirectory
 
@@ -29,53 +59,57 @@ main = do
         ; Just basename -> basename
         }
 
-    libraries <- filesWithExtension ".a" "lib"
+    libraries <- filesWithExtension ".a" libraryDirectory
     let libFilenames = mapMaybe pathBasename libraries
     let libs = ("-l" ++) <$> mapMaybe libName libFilenames
 
     forM libraries (\l -> putStrLn ("[link] " ++ l))
 
-    putStrLn $ "[compile] build/* -> " ++ name
-    _ <- readProcess "gcc" ("-o" : name : "-Llib/" : libs ++ bins ++ includeArgs) ""
+    putStrLn $ "[compile] " ++ buildDirectory ++ "/* -> " ++ name
+    _ <- readProcess "gcc" ("-o" : name : "-Llib/" : libs ++ bins ++ (includeAll projectHeaders)) ""
 
 
     -- Build static library export
     
-    exportExists <- doesDirectoryExist "export"
+    exportExists <- doesDirectoryExist exportDirectory
 
     if not exportExists then pure () else do
 
-        exSources <- filesWithExtension ".c" "export"
+        exSources <- filesWithExtension ".c" exportDirectory
 
-        exBuildExists <- doesDirectoryExist "build/export"
-        unless exBuildExists (createDirectory "build/export")
+        exBuildExists <- doesDirectoryExist (buildDirectory ++ "/export")
+        unless exBuildExists (createDirectory (buildDirectory ++ "/export"))
 
-        maybeExBins <- forM exSources (buildSourceFile "build/export/" includeArgsExport)
+        maybeExBins <- forM exSources (buildSourceFile (includeAll exportHeaders) (buildDirectory ++ "/export"))
         let exBins = maybeExBins >>= maybeToList
         let objectName = name ++ ".a.o"
         let archiveName = "lib" ++ name ++ ".a"
 
-        putStrLn $ "[compile] build/export/* -> " ++ objectName
-        _ <- readProcess "gcc" ("-o" : ("build/export/" ++ name ++ ".a.o") : "-Llib/" : libs ++ bins ++ includeArgsExport) ""
-        putStrLn $ "[archive] build/export/" ++ objectName ++ " -> build/export/" ++ archiveName
-        _ <- readProcess "ar" ("rcs" : ("build/export/" ++ archiveName) : ["build/export/" ++ objectName]) ""
+        putStrLn $ "[compile] " ++ (buildDirectory ++ "/export") ++ "/* -> " ++ objectName
+        _ <- readProcess
+            "gcc"
+            ( "-o"
+            : (buildDirectory ++ "/export/" ++ name ++ ".a.o")
+            : "-Llib/"
+            : libs ++ bins ++ includeAll exportHeaders
+            ) ""
 
-        exIncludeExists <- doesDirectoryExist "build/export/include"
-        unless exIncludeExists (createDirectory "build/export/include")
+        putStrLn $ "[archive] " ++ buildDirectory ++ "/export/" ++ objectName ++ " -> " ++ buildDirectory ++ "export/" ++ archiveName
+        _ <- readProcess
+            "ar"
+            ( "rcs"
+            : (buildDirectory ++ "/export/" ++ archiveName)
+            : [buildDirectory ++ "/export/" ++ objectName]
+            ) ""
 
-        headers <- filesWithExtension ".h" "include"
-        forM_ headers (\h -> case pathBasename h of
+        exIncludeExists <- doesDirectoryExist $ buildDirectory ++ "/export/include"
+        unless exIncludeExists (createDirectory (buildDirectory ++ "/export/include"))
+
+        headers <- mapM (filesWithExtension ".h") (path <$> copyHeaders)
+        forM_ (concat headers) (\h -> case pathBasename h of
             Just base -> do
-                putStrLn $ "[copy] " ++ h ++ " -> build/export/header/" ++ base
-                readProcess "cp" [h, "build/export/include/"] ""
-            Nothing -> pure ""
-            )
-
-        exHeaders <- filesWithExtension ".h" "export/include"
-        forM_ exHeaders (\h -> case pathBasename h of
-            Just base -> do
-                putStrLn $ "[copy] " ++ h ++ " -> build/export/header/" ++ base
-                readProcess "cp" [h, "build/export/include/"] ""
+                putStrLn $ "[copy] " ++ h ++ " -> " ++ buildDirectory ++ "/export/include/" ++ base
+                readProcess "cp" [h, buildDirectory ++ "/export/include/"] ""
             Nothing -> pure ""
             )
 
@@ -93,12 +127,12 @@ libName ('l' : 'i' : 'b' : name) = Just $ remove ".a" name
         | otherwise = c : remove w cs
 libName _ = Nothing
 
--- | Builds a source file into the "build" directory and returns its build artifact path.
-buildSourceFile :: String -> [String] -> FilePath -> IO (Maybe FilePath)
-buildSourceFile dir includes source = case pathBasename source of
+-- | Builds a C source file and produces an object file in the given directory. 
+buildSourceFile :: [String] -> FilePath -> FilePath -> IO (Maybe FilePath)
+buildSourceFile includes dir source = case pathBasename source of
     Nothing -> pure Nothing
     Just name -> do
-        let bin = dir ++ name ++ ".o"
+        let bin = dir ++ "/" ++ name ++ ".o"
         let args = ["-c", "-o", bin, source] ++ includes
 
         putStrLn $ "[compile] " ++ source ++ " -> " ++ bin
