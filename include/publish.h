@@ -53,8 +53,8 @@
 typedef struct {
 #ifdef PUBLISH_SHARED_MEM
 	int mem_fd;
-	pthread_mutex_t* mutex;
-	sensor_frame_t* frame;
+	volatile pthread_mutex_t* mutex;
+	volatile sensor_frame_t* frame;
 #endif  /* PUBLISH_SHARED_MEM */
 
 #ifdef PUBLISH_ZENOH
