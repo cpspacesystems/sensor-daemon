@@ -60,6 +60,25 @@ main = do
         putStrLn $ "[archive] build/export/" ++ objectName ++ " -> build/export/" ++ archiveName
         _ <- readProcess "ar" ("rcs" : ("build/export/" ++ archiveName) : ["build/export/" ++ objectName]) ""
 
+        exIncludeExists <- doesDirectoryExist "build/export/include"
+        unless exIncludeExists (createDirectory "build/export/include")
+
+        headers <- filesWithExtension ".h" "include"
+        forM_ headers (\h -> case pathBasename h of
+            Just base -> do
+                putStrLn $ "[copy] " ++ h ++ " -> build/export/header/" ++ base
+                readProcess "cp" [h, "build/export/include/"] ""
+            Nothing -> pure ""
+            )
+
+        exHeaders <- filesWithExtension ".h" "export/include"
+        forM_ exHeaders (\h -> case pathBasename h of
+            Just base -> do
+                putStrLn $ "[copy] " ++ h ++ " -> build/export/header/" ++ base
+                readProcess "cp" [h, "build/export/include/"] ""
+            Nothing -> pure ""
+            )
+
         pure ()
 
 pathBasename :: FilePath -> Maybe String
