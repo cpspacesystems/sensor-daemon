@@ -4,8 +4,11 @@ import System.Directory
 import System.Process
 import System.FilePath
 import Data.Maybe
-import Data.List (isSuffixOf, unsnoc)
+import Data.List (isSuffixOf, isPrefixOf, unsnoc)
 import Control.Monad
+
+includeArgs :: [String]
+includeArgs = ["-I", "include/", "-I", "lib/include/"]
 
 main :: IO ()
 main = do
@@ -23,12 +26,27 @@ main = do
         ; Just basename -> basename
         }
 
+    libraries <- filesWithExtension ".a" "lib"
+    let libFilenames = mapMaybe pathBasename libraries
+    let libs = ("-l" ++) <$> mapMaybe libName libFilenames
+
+    forM libraries (\l -> putStrLn ("[link] " ++ l))
+
     putStrLn $ "[compile] build/* -> " ++ name
-    _ <- readProcess "gcc" ("-o" : name : bins ++ ["-I", "include/"]) ""
+    _ <- readProcess "gcc" ("-o" : name : "-Llib/" : libs ++ bins ++ includeArgs) ""
     pure ()
 
 pathBasename :: FilePath -> Maybe String
 pathBasename path = snd <$> unsnoc (splitPath path)
+
+libName :: FilePath -> Maybe String
+libName ('l' : 'i' : 'b' : name) = Just $ remove ".a" name
+  where
+    remove w "" = ""
+    remove w s@(c:cs) 
+        | w `isPrefixOf` s = remove w (drop (length w) s)
+        | otherwise = c : remove w cs
+libName _ = Nothing
 
 -- | Builds a source file into the "build" directory and returns its build artifact path.
 buildSourceFile :: FilePath -> IO (Maybe FilePath)
@@ -36,7 +54,7 @@ buildSourceFile source = case pathBasename source of
     Nothing -> pure Nothing
     Just name -> do
         let bin = "build/" ++ name ++ ".o"
-        let args = ["-c", "-o", bin, source, "-I", "include/"]
+        let args = ["-c", "-o", bin, source] ++ includeArgs
 
         putStrLn $ "[compile] " ++ source ++ " -> " ++ bin
         _ <- readProcess "gcc" args ""
