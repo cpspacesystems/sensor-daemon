@@ -145,6 +145,12 @@ i2c_error_t i2c_device_set(i2c_bus_handle_t* bus, i2c_addr_t dev) {
 		goto handle_errno;
 	}
 
+	if (dev.width == I2C_ADDR_10_BIT) {
+		LOG_DEBUG("Set to use device at address '%#002x' over I2C bus.", dev.addr);
+	} else {
+		LOG_DEBUG("Set to use device at address '%#02x' over I2C bus.", dev.addr);
+	}
+
 	return I2C_OK;
 
 handle_errno:
@@ -169,6 +175,7 @@ i2c_error_t i2c_write(i2c_bus_handle_t* bus, i2c_addr_t dev, uint8_t* buf, size_
 		goto handle_errno;
 	}
 	
+	LOG_DEBUG("Wrote %u bytes over I2C.", n);
 	return I2C_OK;
 
 handle_errno:
@@ -201,6 +208,7 @@ i2c_error_t i2c_read(i2c_bus_handle_t* bus, i2c_addr_t dev, uint8_t* buf, size_t
 		goto handle_errno;
 	}
 	
+	LOG_DEBUG("Read %u bytes over I2C.", n);
 	return I2C_OK;
 
 handle_errno:
@@ -268,6 +276,7 @@ i2c_error_t i2c_write_read(i2c_bus_handle_t* bus, i2c_addr_t dev, uint8_t* tx_bu
 		goto handle_errno;
 	}
 
+	LOG_DEBUG("Performed combined write (%u bytes) then read (%u bytes) over I2C.", tx_n, rx_n);
 	return I2C_OK;
 
 handle_errno:

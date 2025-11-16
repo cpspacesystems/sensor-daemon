@@ -1,4 +1,4 @@
-/**
+/*
  * Wrapper over Linux I2C functionality.
  */
 
@@ -75,6 +75,11 @@ typedef enum {
 	I2C_MISSING_FUNC = -9,
 
 	/**
+	 * No available I2C bus.
+	 */
+	I2C_NO_BUS = -10,
+
+	/**
 	 * Unknown error.
 	 */
 	I2C_UNKNOWN = -128
@@ -130,14 +135,22 @@ typedef struct {
 } i2c_bus_handle_t;
 
 /**
+ * Automatically find a device file for I2C. This function will find a device
+ * file matching "/dev/i2c-%u", and will set `device` to be a pointer to a
+ * string containing the path to the I2C device with the smallest value of "%u".
+ *
+ * `device` should point to a char array of at least 13 characters.
+ *
+ * On failure to find a bus this function returns `I2C_NO_BUS`, otherwise I2C_OK
+ * is returned.
+ */
+i2c_error_t i2c_bus_auto_find(char* device);
+
+/**
  * Open the I2C device. Populates the given `i2c_bus_handle_t` with a file
  * descriptor of the in-use I2C device.
- *
- * This function will select one of "/dev/i2c-0" or "/dev/i2c-1" depending on
- * the GPIO layout of the Raspberry Pi model being used, so essentially
- * depending on the model of Pi.
  */
-i2c_error_t i2c_bus_open(i2c_bus_handle_t* bus);
+i2c_error_t i2c_bus_open(i2c_bus_handle_t* bus, const char* device);
 
 /**
  * Close the given I2C bus.
