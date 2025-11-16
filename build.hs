@@ -10,6 +10,9 @@ import Control.Monad
 includeArgs :: [String]
 includeArgs = ["-I", "include/", "-I", "lib/include/"]
 
+includeArgsExport :: [String]
+includeArgsExport = ["-I", "include/", "-I", "lib/include/", "-I", "export/include/"]
+
 main :: IO ()
 main = do
     sources <- filesWithExtension ".c" "src"
@@ -17,7 +20,7 @@ main = do
     buildExists <- doesDirectoryExist "build"
     unless buildExists (createDirectory "build")
 
-    maybeBins <- forM sources buildSourceFile
+    maybeBins <- forM sources (buildSourceFile "build/" includeArgs)
     let bins = maybeBins >>= maybeToList
     projDir <- getCurrentDirectory
 
@@ -34,7 +37,30 @@ main = do
 
     putStrLn $ "[compile] build/* -> " ++ name
     _ <- readProcess "gcc" ("-o" : name : "-Llib/" : libs ++ bins ++ includeArgs) ""
-    pure ()
+
+
+    -- Build static library export
+    
+    exportExists <- doesDirectoryExist "export"
+
+    if not exportExists then pure () else do
+
+        exSources <- filesWithExtension ".c" "export"
+
+        exBuildExists <- doesDirectoryExist "build/export"
+        unless exBuildExists (createDirectory "build/export")
+
+        maybeExBins <- forM exSources (buildSourceFile "build/export/" includeArgsExport)
+        let exBins = maybeExBins >>= maybeToList
+        let objectName = name ++ ".a.o"
+        let archiveName = "lib" ++ name ++ ".a"
+
+        putStrLn $ "[compile] build/export/* -> " ++ objectName
+        _ <- readProcess "gcc" ("-o" : ("build/export/" ++ name ++ ".a.o") : "-Llib/" : libs ++ bins ++ includeArgsExport) ""
+        putStrLn $ "[archive] build/export/" ++ objectName ++ " -> build/export/" ++ archiveName
+        _ <- readProcess "ar" ("rcs" : ("build/export/" ++ archiveName) : ["build/export/" ++ objectName]) ""
+
+        pure ()
 
 pathBasename :: FilePath -> Maybe String
 pathBasename path = snd <$> unsnoc (splitPath path)
@@ -49,12 +75,12 @@ libName ('l' : 'i' : 'b' : name) = Just $ remove ".a" name
 libName _ = Nothing
 
 -- | Builds a source file into the "build" directory and returns its build artifact path.
-buildSourceFile :: FilePath -> IO (Maybe FilePath)
-buildSourceFile source = case pathBasename source of
+buildSourceFile :: String -> [String] -> FilePath -> IO (Maybe FilePath)
+buildSourceFile dir includes source = case pathBasename source of
     Nothing -> pure Nothing
     Just name -> do
-        let bin = "build/" ++ name ++ ".o"
-        let args = ["-c", "-o", bin, source] ++ includeArgs
+        let bin = dir ++ name ++ ".o"
+        let args = ["-c", "-o", bin, source] ++ includes
 
         putStrLn $ "[compile] " ++ source ++ " -> " ++ bin
         _ <- readProcess "gcc" args ""

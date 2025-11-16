@@ -2,3 +2,5 @@
 include/
 -I
 lib/include/
+-I
+export/include/
