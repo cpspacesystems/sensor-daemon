@@ -1,4 +1,4 @@
-/**
+/*
  * File based, as well as stdout and stderr based logging.
  */
 

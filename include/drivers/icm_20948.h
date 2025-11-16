@@ -1,4 +1,4 @@
-/**
+/*
  * I2C based driver for the ICM 20948 9 DoF IMU.
  */
 

@@ -1,4 +1,4 @@
-/**
+/*
  * Like the `linux-i2c-dev-defs.h` header, just bringing in some definitions for
  * convinience form the `linux/i2c.h` header.
  */

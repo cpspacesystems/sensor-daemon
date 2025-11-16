@@ -1,4 +1,4 @@
-/**
+/*
  * Some definitions from the `linux/i2c-dev.h` header, included for ease of
  * development and in case these are missing somewhere, which is something
  * wiringPi seemed to be concerned about.
