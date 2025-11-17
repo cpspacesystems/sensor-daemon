@@ -64,6 +64,9 @@ main = do
 
     -- Build static library export
     
+    exportExists <- doesDirectoryExist (buildDirectory ++ "/export")
+    unless exportExists (createDirectory (buildDirectory ++ "/export"))
+    
     exportSources <- filter (not . ("main.c" `isSuffixOf`)) <$> filesWithExtension ".c" sourceDirectory
     maybeExBins <- forM exportSources (buildSourceFile (includeAll projectHeaders) (buildDirectory ++ "/export"))
     let exBins = maybeExBins >>= maybeToList
@@ -86,17 +89,6 @@ main = do
         : (buildDirectory ++ "/export/" ++ archiveName)
         : [buildDirectory ++ "/export/" ++ objectName]
         ) ""
-
-    exIncludeExists <- doesDirectoryExist $ buildDirectory ++ "/export/include"
-    unless exIncludeExists (createDirectory (buildDirectory ++ "/export/include"))
-
-    headers <- mapM (filesWithExtension ".h") (path <$> copyHeaders)
-    forM_ (concat headers) (\h -> case pathBasename h of
-        Just base -> do
-            putStrLn $ "[copy] " ++ h ++ " -> " ++ buildDirectory ++ "/export/include/" ++ base
-            readProcess "cp" [h, buildDirectory ++ "/export/include/"] ""
-        Nothing -> pure ""
-        )
 
     pure ()
 
