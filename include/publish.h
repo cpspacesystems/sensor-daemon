@@ -12,27 +12,6 @@
 #include <stddef.h>
 #include <pthread.h>
 
-#include "sensor_frame.h"
-
-#define PUBLISH_SHARED_MEM
-// #define PUBLISH_ZENOH
-
-
-/*
- * Shared memory definitions.
- */
- 
-#ifdef PUBLISH_SHARED_MEM
-#define PUBLISH_SHARED_MEM_NAME "sensord"
-#define PUBLISH_SHARED_MEM_SIZE sizeof(sensor_frame_t)
-#endif  /* PUBLISH_SHARED_MEM */
-
-
-/*
- * Zenoh definitions.
- */
- 
-#ifdef PUBLISH_ZENOH
 
 #if defined(__apple__)
 #define ZENOH_MACOS
@@ -44,23 +23,15 @@
 
 #include <zenoh-pico.h>
 
-#endif  /* PUBLISH_ZENOH */
+#include "sensor_frame.h"
 
 /**
  * Data needed to publishing. The fields of this type depend on the selected
  * backend.
  */
 typedef struct {
-#ifdef PUBLISH_SHARED_MEM
-	int mem_fd;
-	pthread_mutex_t* mutex;
-	sensor_frame_t* frame;
-#endif  /* PUBLISH_SHARED_MEM */
-
-#ifdef PUBLISH_ZENOH
 	z_owned_session_t session;
 	z_owned_keyexpr_t keyexpr;
-#endif  /* PUBLISH_ZENOH */
 } publisher_t;
 
 typedef enum {
@@ -106,23 +77,10 @@ typedef enum {
 	 */
 	PUBLISH_NO_MEMORY = -8,
 
-
-#ifdef PUBLISH_SHARED_MEM
-
 	/**
-	 * Operation would cause a deadlock.
+	 * Zenoh get failed.
 	 */
-	PUBLISH_DEADLOCK = -62,
-
-	/**
-	 * Operation requires the use of a busy resource.
-	 */
-	PUBLISH_BUSY = -63,
-
-#endif  /* PUBLISH_SHARED_MEM */
-
-
-#ifdef PUBLISH_ZENOH
+	PUBLISH_Z_GET = -124,
 
 	/**
 	 * Failure to declare Zenoh key.
@@ -138,8 +96,6 @@ typedef enum {
 	 * Failed to start a Zenoh task/
 	 */
 	PUBLISH_Z_TASK = -127,
-
-#endif  /* PUBLISH_ZENOH */
 	
 	PUBLISH_UNKNWON = -128,
 } publish_error_t;

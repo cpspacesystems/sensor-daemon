@@ -3,16 +3,13 @@
 
 #include "sensor_frame.h"
 #include "publish.h"
+#include "zenoh-pico/api/types.h"
 
 typedef publish_error_t sensord_error_t;
 
 typedef struct {
-#ifdef PUBLISH_SHARED_MEM
-	int mem_fd;
-	pthread_mutex_t* mutex;
-	sensor_frame_t* frame;
-#endif  /* PUBLISH_SHARED_MEM */
-
+	z_owned_session_t session;
+	z_view_keyexpr_t keyexpr;
 } sensord_reciever_t;
 
 /**

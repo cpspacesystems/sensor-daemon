@@ -68,7 +68,7 @@ retry_setup_imu:
 	publisher_t publisher;
 
 	if ((publish_err = publisher_init(&publisher)) != PUBLISH_OK) {
-		LOG_ERROR("Failed to initialize publisher! Exiting ...");
+		LOG_ERROR("Failed to initialize publisher (%i)! Exiting ...", publish_err);
 		exit(publish_err);
 	}
 
@@ -85,4 +85,16 @@ retry_setup_imu:
 	};
 	
 	publish_frame(&publisher, &frame);
+
+	for (;;) {
+		frame.imu_frame.accel_x *= 0.01;
+		frame.imu_frame.accel_y += 0.1;
+		frame.imu_frame.accel_z -= 0.1;
+		frame.imu_frame.angle_x_rad += 0.1;
+		frame.imu_frame.angle_y_rad -= 0.1;
+		frame.imu_frame.angle_z_rad += 0.05;
+
+		publish_frame(&publisher, &frame);
+		sleep(1);
+	}
 }

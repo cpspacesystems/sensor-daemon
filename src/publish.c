@@ -6,165 +6,11 @@
 #include "publish.h"
 #include "sensor_frame.h"
 #include "log.h"
-
-/*
- * Shared memory backend.
- */
-
-#ifdef PUBLISH_SHARED_MEM
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <pthread.h>
-#endif  /* PUBLISH_SHARED_MEM */
-
-
-/*
- * Zenoh backend.
- */
-
-#ifdef PUBLISH_ZENOH
-
 #include "config.h"
+
 #include <zenoh-pico.h>
 
-#endif  /* PUBLISH_ZENOH */
-
-
 #define PUBLISH_ARG_NULL_CHECK(ptr) if (!ptr) return PUBLISH_INVALID_ARGUMENT;
-
-
-/*
- * Shared memory backend implementation.
- */
- 
-#ifdef PUBLISH_SHARED_MEM
-
-publish_error_t publisher_init(publisher_t* pub) {
-	PUBLISH_ARG_NULL_CHECK(pub);
-	
-	pub->mem_fd = shm_open(
-		PUBLISH_SHARED_MEM_NAME,
-		O_CREAT | O_RDWR | O_EXCL | O_TRUNC
-	);
-
-	if (pub->mem_fd < 0) {
-		goto handle_errno;
-	}
-
-	if (ftruncate(pub->mem_fd, PUBLISH_SHARED_MEM_SIZE)) {
-		goto handle_errno;
-	}
-
-	pub->mutex = mmap(
-		NULL,
-		sizeof(pthread_mutex_t) + sizeof(sensor_frame_t),
-		PROT_WRITE,
-		MAP_SHARED,
-		pub->mem_fd,
-		0
-	);
-
-	pub->frame = (sensor_frame_t*)(pub->mutex + sizeof(pthread_mutex_t));
-
-	if (pub->mutex == MAP_FAILED) {
-		goto handle_errno;
-	}
-
-	int perror;
-	if ((perror = pthread_mutex_init(pub->mutex, NULL)) != 0) {
-		goto handle_perror;
-	}
-
-	return PUBLISH_OK;
-
-handle_errno:
-	switch (errno) {
-		case EACCES:  return PUBLISH_BAD_PERMISSIONS;
-		case EEXIST:  return PUBLISH_ALREADY_OPEN;
-		case ENFILE:
-		case EMFILE:  return PUBLISH_TOO_MANY_FDS;
-		case ENOSPC:  return PUBLISH_NO_STORAGE;
-		case EINTR:   return PUBLISH_INTERRUPTED;
-		case ENOMEM:  return PUBLISH_NO_MEMORY;
-		case EDEADLK: return PUBLISH_DEADLOCK;
-		default:      return PUBLISH_UNKNWON;
-	}
-
-handle_perror:
-	switch (perror) {
-		case ENOMEM:  return PUBLISH_NO_MEMORY;
-		default:      return PUBLISH_UNKNWON;
-	}
-}
-
-publish_error_t publisher_cleanup(publisher_t* pub) {
-	PUBLISH_ARG_NULL_CHECK(pub);
-
-	int perror;
-	if ((perror = pthread_mutex_destroy(pub->mutex)) != 0) {
-		goto handle_errno;
-	}
-
-	if (close(pub->mem_fd) < 0) {
-		goto handle_errno;
-	}
-
-	return PUBLISH_OK;
-
-handle_errno:
-	switch (errno) {
-		case EACCES: return PUBLISH_BAD_PERMISSIONS;
-		case EEXIST: return PUBLISH_ALREADY_OPEN;
-		case ENFILE:
-		case EMFILE: return PUBLISH_TOO_MANY_FDS;
-		case ENOSPC: return PUBLISH_NO_STORAGE;
-		case EINTR:  return PUBLISH_INTERRUPTED;
-		default:     return PUBLISH_UNKNWON;
-	}
-
-handle_perror:
-	switch (perror) {
-		case EBUSY:  return PUBLISH_BUSY;
-		default:     return PUBLISH_UNKNWON;
-	}
-}
-
-publish_error_t publish_frame(publisher_t* pub, sensor_frame_t* frame) {
-	PUBLISH_ARG_NULL_CHECK(pub);
-	PUBLISH_ARG_NULL_CHECK(pub->mutex);
-	PUBLISH_ARG_NULL_CHECK(pub->frame);
-
-	int perror;
-	if ((perror = pthread_mutex_lock(pub->mutex)) != 0) {
-		LOG_ERROR("Failed to lock publish mutex!");
-		goto handle_perror;
-	}
-
-	memcpy(pub->frame, frame, PUBLISH_SHARED_MEM_SIZE);
-
-	if ((perror = pthread_mutex_unlock(pub->mutex)) != 0) {
-		LOG_ERROR("Failed to unlock publish mutex!");
-		goto handle_perror;
-	}
-	
-	LOG_DEBUG("Published (`memcpy`) sensor frame (%u bytes).", sizeof(sensor_frame_t));
-	return PUBLISH_OK;
-
-handle_perror:
-	switch (perror) {
-		case EDEADLK: return PUBLISH_DEADLOCK;
-		default:      return PUBLISH_UNKNWON;
-	}
-}
-
-#endif  /* PUBLISH_SHARED_MEM */
-
-
-/*
- * Zenoh backend implementation.
- */
-
-#ifdef PUBLISH_ZENOH
 
 publish_error_t publisher_init(publisher_t* pub) {
 	z_owned_config_t config;
@@ -177,11 +23,11 @@ publish_error_t publisher_init(publisher_t* pub) {
 	 */
 
 	z_config_default(&config);
-	zp_config_insert(z_loan_mut(config), Z_CONFIG_MODE_KEY, Z_CONFIG_MODE_PEER);
-	// zp_config_insert(z_loan_mut(config), Z_CONFIG_SCOUTING_TIMEOUT_KEY, "16000");
-	// zp_config_insert(z_loan_mut(config), Z_CONFIG_CONNECT_KEY, "udp/127.0.0.1:" ZENOH_TCP_LOCATOR_PORT);
-	zp_config_insert(z_loan_mut(config), Z_CONFIG_MULTICAST_LOCATOR_KEY, Z_CONFIG_MULTICAST_LOCATOR_DEFAULT);
-	zp_config_insert(z_loan_mut(config), Z_CONFIG_MULTICAST_SCOUTING_KEY, Z_CONFIG_MULTICAST_SCOUTING_DEFAULT);
+	zp_config_insert(z_loan_mut(config), Z_CONFIG_MODE_KEY, Z_CONFIG_MODE_CLIENT);
+	zp_config_insert(z_loan_mut(config), Z_CONFIG_SCOUTING_TIMEOUT_KEY, "16000");
+	zp_config_insert(z_loan_mut(config), Z_CONFIG_CONNECT_KEY, "tcp/10.144.239.91:7447");
+	// zp_config_insert(z_loan_mut(config), Z_CONFIG_MULTICAST_LOCATOR_KEY, Z_CONFIG_MULTICAST_LOCATOR_DEFAULT);
+	// zp_config_insert(z_loan_mut(config), Z_CONFIG_MULTICAST_SCOUTING_KEY, Z_CONFIG_MULTICAST_SCOUTING_DEFAULT);
 	
 
 	/*
@@ -261,5 +107,3 @@ publish_error_t publish_frame(publisher_t* pub, sensor_frame_t* frame) {
 	LOG_DEBUG("Published (`z_put`) sensor frame (%u bytes).", sizeof(sensor_frame_t));
 	return PUBLISH_OK;
 }
-
-#endif  /* PUBLISH_ZENOH */

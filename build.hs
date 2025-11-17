@@ -73,21 +73,12 @@ main = do
     let objectName = name ++ ".a.o"
     let archiveName = "lib" ++ name ++ ".a"
 
-    putStrLn $ "[compile] " ++ (buildDirectory ++ "/export") ++ "/* -> " ++ objectName
-    _ <- readProcess
-        "gcc"
-        ( "-o"
-        : (buildDirectory ++ "/export/" ++ name ++ ".a.o")
-        : "-Llib/"
-        : libs ++ bins ++ includeAll projectHeaders
-        ) ""
-
-    putStrLn $ "[archive] " ++ buildDirectory ++ "/export/" ++ objectName ++ " -> " ++ buildDirectory ++ "export/" ++ archiveName
+    putStrLn $ "[archive] " ++ buildDirectory ++ "/export/*.o" ++ " -> " ++ buildDirectory ++ "export/" ++ archiveName
     _ <- readProcess
         "ar"
         ( "rcs"
         : (buildDirectory ++ "/export/" ++ archiveName)
-        : [buildDirectory ++ "/export/" ++ objectName]
+        : exBins
         ) ""
 
     pure ()
