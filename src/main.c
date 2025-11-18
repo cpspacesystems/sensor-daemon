@@ -84,6 +84,7 @@ retry_setup_imu:
 		}
 	};
 	
+	sensor_frame_timestamp(&frame);
 	publish_frame(&publisher, &frame);
 
 	for (;;) {
@@ -94,7 +95,7 @@ retry_setup_imu:
 		frame.imu_frame.angle_y_rad -= 0.1;
 		frame.imu_frame.angle_z_rad += 0.05;
 
+		sensor_frame_timestamp(&frame);
 		publish_frame(&publisher, &frame);
-		sleep(1);
 	}
 }

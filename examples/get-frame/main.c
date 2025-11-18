@@ -19,6 +19,9 @@ int main(void) {
 		exit(-1);
 	}
 
+	struct timeval time;
+	gettimeofday(&time, NULL);
+
 	printf("Sensor Frame:\n");
 	printf("\tGyro X: %f\n", frame.imu_frame.angle_x_rad);
 	printf("\tGyro Y: %f\n", frame.imu_frame.angle_y_rad);
@@ -26,4 +29,9 @@ int main(void) {
 	printf("\tAccel X: %f\n", frame.imu_frame.accel_x);
 	printf("\tAccel Y: %f\n", frame.imu_frame.accel_y);
 	printf("\tAccel Z: %f\n", frame.imu_frame.accel_z);
+	printf("\tTime Seconds: %ld\n", frame.measure_time.tv_sec);
+	printf("\tTime Microseconds: %u\n", frame.measure_time.tv_usec);
+
+	printf("\nCurrent Time Seconds: %ld\n", time.tv_sec);
+	printf("Current Time Microseconds: %u\n", time.tv_usec);
 }

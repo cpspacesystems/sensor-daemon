@@ -4,6 +4,10 @@
 
 #define MBIND(e) { i2c_error_t err = e; if (e != I2C_OK) return e; }
 
+void sensor_frame_timestamp(sensor_frame_t* frame) {
+	gettimeofday(&frame->measure_time, NULL);
+}
+
 i2c_error_t sensor_imu_frame_record(i2c_bus_handle_t* bus, i2c_addr_t icm_20948, sensor_imu_frame_t* frame) {
 	MBIND(icm_get_accel_x(bus, icm_20948, &frame->accel_x));
 	MBIND(icm_get_accel_y(bus, icm_20948, &frame->accel_y));
