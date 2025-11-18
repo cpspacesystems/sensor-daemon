@@ -6,14 +6,91 @@
 #include <unistd.h>
 
 #include "sensord.h"
-#include "config.h"
-#include "log.h"
 #include "publish.h"
 #include "sensor_frame.h"
 
 #define SENSORD_CHECK_ARG_NULL(arg) if (!arg) return PUBLISH_INVALID_ARGUMENT;
 
+
+/*
+ * Tempfile backend implementation.
+ */
+
+#ifdef PUBLISH_TMPFS
+
 sensord_error_t sensord_init(sensord_reciever_t* recv) {
+	SENSORD_CHECK_ARG_NULL(recv);
+
+	recv->tempfile_fd = open(PUBLISH_TMPFILE_NAME, O_RDONLY);
+
+	if (recv->tempfile_fd < 0) {
+		goto handle_errno;
+	}
+
+	return PUBLISH_OK;
+	
+handle_errno:
+	switch (errno) {
+		case EACCES: return PUBLISH_BAD_PERMISSIONS;
+		case EINTR:  return PUBLISH_INTERRUPTED;
+		case EIO:    return PUBLISH_IO_ERROR;
+		default:     return PUBLISH_UNKNWON;
+	}
+}
+
+sensord_error_t sensord_get_sensor_frame(sensord_reciever_t* recv, sensor_frame_t* frame) {
+	SENSORD_CHECK_ARG_NULL(recv);
+	SENSORD_CHECK_ARG_NULL(frame);
+	
+	if (lseek(recv->tempfile_fd, 0, SEEK_SET) < 0) {
+		goto handle_errno;
+	}
+
+	if (read(recv->tempfile_fd, (void*)frame, sizeof *frame) < 0) {
+		goto handle_errno;
+	}
+
+	return PUBLISH_OK;
+
+handle_errno:
+	switch (errno) {
+		case EACCES: return PUBLISH_BAD_PERMISSIONS;
+		case EINTR:  return PUBLISH_INTERRUPTED;
+		case EIO:    return PUBLISH_IO_ERROR;
+		default:     return PUBLISH_UNKNWON;
+	}
+}
+
+sensord_error_t sensord_cleanup(sensord_reciever_t* recv) {
+	SENSORD_CHECK_ARG_NULL(recv);
+	
+	if (close(recv->tempfile_fd) < 0) {
+		goto handle_errno;
+	}
+
+	return PUBLISH_OK;
+
+handle_errno:
+	switch (errno) {
+		case EACCES: return PUBLISH_BAD_PERMISSIONS;
+		case EINTR:  return PUBLISH_INTERRUPTED;
+		case EIO:    return PUBLISH_IO_ERROR;
+		default:     return PUBLISH_UNKNWON;
+	}
+}
+
+#endif  /* PUBLISH_TMPFS */
+
+
+/*
+ * Zenoh backend implementation.
+ */
+
+#ifdef PUBLISH_ZENOH
+
+sensord_error_t sensord_init(sensord_reciever_t* recv) {
+	SENSORD_CHECK_ARG_NULL(recv);
+
 	z_owned_config_t config;
 	z_result_t z_res;
 	int session_open_retries = 0;
@@ -95,6 +172,9 @@ static void sensord_get_callback(z_loaned_reply_t* reply, void* ctx) {
 }
 
 sensord_error_t sensord_get_sensor_frame(sensord_reciever_t* recv, sensor_frame_t* frame) {
+	SENSORD_CHECK_ARG_NULL(recv);
+	SENSORD_CHECK_ARG_NULL(frame);
+
 	z_result_t z_res;
 	z_get_options_t opts;
 	z_owned_closure_reply_t get_callback;
@@ -117,3 +197,5 @@ sensord_error_t sensord_cleanup(sensord_reciever_t* recv) {
 	z_drop(z_move(recv->session));
 	return PUBLISH_OK;
 }
+
+#endif  /* PUBLISH_ZENOH */

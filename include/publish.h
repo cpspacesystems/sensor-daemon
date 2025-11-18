@@ -9,9 +9,19 @@
 #ifndef _PUBLISH_H
 #define _PUBLISH_H
 
+#include <stdio.h>
 #include <stddef.h>
-#include <pthread.h>
+#include "sensor_frame.h"
 
+// #define PUBLISH_ZENOH
+#define PUBLISH_TMPFS
+
+
+/*
+ * Zenoh backend definitions.
+ */
+ 
+#ifdef PUBLISH_ZENOH
 
 #if defined(__apple__)
 #define ZENOH_MACOS
@@ -23,15 +33,34 @@
 
 #include <zenoh-pico.h>
 
-#include "sensor_frame.h"
+#endif  /* PUBLISH_ZENOH */
+
+
+/*
+ * Tempfile backend definitions.
+ */
+
+#ifdef PUBLISH_TMPFS
+
+#define PUBLISH_TMPFILE_NAME "/tmp/sensord.temp"
+
+#endif  /* PUBLISH_TMPFS */
+
 
 /**
  * Data needed to publishing. The fields of this type depend on the selected
  * backend.
  */
 typedef struct {
+#ifdef PUBLISH_ZENOH
 	z_owned_session_t session;
 	z_owned_keyexpr_t keyexpr;
+#endif  /* PUBLISH_ZENOH */
+
+#ifdef PUBLISH_TMPFS
+	// char tempfile_name[sizeof *PUBLISH_TMPFILE_NAME];
+	int tempfile_fd;
+#endif  /* PUBLISH_TMPFS */
 } publisher_t;
 
 typedef enum {
@@ -77,6 +106,13 @@ typedef enum {
 	 */
 	PUBLISH_NO_MEMORY = -8,
 
+
+#ifdef PUBLISH_TMPFS
+
+#endif  /* PUBLISH_TMPFS */
+
+
+#ifdef PUBLISH_ZENOH
 	/**
 	 * Zenoh get failed.
 	 */
@@ -96,7 +132,9 @@ typedef enum {
 	 * Failed to start a Zenoh task/
 	 */
 	PUBLISH_Z_TASK = -127,
+#endif  /* PUBLISH_ZENOH */
 	
+
 	PUBLISH_UNKNWON = -128,
 } publish_error_t;
 

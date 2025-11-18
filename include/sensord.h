@@ -3,13 +3,22 @@
 
 #include "sensor_frame.h"
 #include "publish.h"
+
+#ifdef PUBLISH_ZENOH
 #include "zenoh-pico/api/types.h"
+#endif  /* PUBLISH_ZENOH */
 
 typedef publish_error_t sensord_error_t;
 
 typedef struct {
+#ifdef PUBLISH_ZENOH
 	z_owned_session_t session;
 	z_view_keyexpr_t keyexpr;
+#endif  /* PUBLISH_ZENOH */
+
+#ifdef PUBLISH_TMPFS
+	int tempfile_fd;
+#endif  /* PUBLISH_TMPFS */
 } sensord_reciever_t;
 
 /**

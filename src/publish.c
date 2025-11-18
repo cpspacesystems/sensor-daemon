@@ -2,17 +2,118 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #include "publish.h"
 #include "sensor_frame.h"
 #include "log.h"
-#include "config.h"
 
+#ifdef PUBLISH_ZENOH
+#include "config.h"
 #include <zenoh-pico.h>
+#endif  /* PUBLISH_ZENOH */
 
 #define PUBLISH_ARG_NULL_CHECK(ptr) if (!ptr) return PUBLISH_INVALID_ARGUMENT;
 
+
+/*
+ * Tempfile backend implementation.
+ */
+
+#ifdef PUBLISH_TMPFS
+
+publish_error_t publisher_init(publisher_t* publisher) {
+	PUBLISH_ARG_NULL_CHECK(publisher);
+	
+	// strcpy(publisher->tempfile_name, PUBLISH_TMPFILE_NAME);
+	// publisher->tempfile_fd = mkstemp(publisher->tempfile_name);
+
+	publisher->tempfile_fd = open(PUBLISH_TMPFILE_NAME, O_RDWR | O_CREAT);
+
+	if (publisher->tempfile_fd < 0) {
+		LOG_ERROR("Could not open tempfile (%s) for publishing (%i)!", PUBLISH_TMPFILE_NAME, errno);
+		goto handle_errno;
+	}
+
+	LOG_INFO("Opened '%s' for publishing.", PUBLISH_TMPFILE_NAME);
+
+	int permissions = S_IRWXU | S_IRWXG | S_IROTH;
+	
+	if (fchmod(publisher->tempfile_fd, permissions) < 0) {
+		LOG_ERROR("Failed to set permissions for '%s' (%i)!", PUBLISH_TMPFILE_NAME, errno);
+		goto handle_errno;
+	}
+
+	LOG_INFO("Set permissions for tempfile '%s' to %i", PUBLISH_TMPFILE_NAME, permissions);
+
+	return PUBLISH_OK;
+	
+handle_errno:
+	switch (errno) {
+		case EACCES: return PUBLISH_BAD_PERMISSIONS;
+		case EINTR:  return PUBLISH_INTERRUPTED;
+		case EIO:    return PUBLISH_IO_ERROR;
+		default:     return PUBLISH_UNKNWON;
+	}
+}
+
+publish_error_t publisher_cleanup(publisher_t* publisher) {
+	PUBLISH_ARG_NULL_CHECK(publisher);
+
+	if (close(publisher->tempfile_fd) < 0) {
+		goto handle_errno;
+	}
+
+	return PUBLISH_OK;
+
+handle_errno:
+	switch (errno) {
+		case EACCES: return PUBLISH_BAD_PERMISSIONS;
+		case EINTR:  return PUBLISH_INTERRUPTED;
+		case EIO:    return PUBLISH_IO_ERROR;
+		default:     return PUBLISH_UNKNWON;
+	}
+}
+
+publish_error_t publish_frame(publisher_t* publisher, sensor_frame_t* frame) {
+	PUBLISH_ARG_NULL_CHECK(publisher);
+
+	if (lseek(publisher->tempfile_fd, 0, SEEK_SET) < 0) {
+		goto handle_errno;
+	}
+
+	ssize_t n;
+
+	if ((n = write(publisher->tempfile_fd, (void*)frame, sizeof *frame)) < 0) {
+		goto handle_errno;
+	}
+
+	LOG_DEBUG("Published (`write`) sensor frame (%i bytes).", n);
+
+	return PUBLISH_OK;
+
+handle_errno:
+	switch (errno) {
+		case EACCES: return PUBLISH_BAD_PERMISSIONS;
+		case EINTR:  return PUBLISH_INTERRUPTED;
+		case EIO:    return PUBLISH_IO_ERROR;
+		default:     return PUBLISH_UNKNWON;
+	}
+}
+
+#endif  /* PUBLISH_TMPFS */
+ 
+
+/*
+ * Zenoh backend implementaton.
+ */
+
+#ifdef PUBLISH_ZENOH
+
 publish_error_t publisher_init(publisher_t* pub) {
+	PUBLISH_ARG_NULL_CHECK(pub);
+
 	z_owned_config_t config;
 	z_result_t z_res;
 	int session_open_retries = 0;
@@ -90,11 +191,14 @@ retry_open_session:
 }
 
 publish_error_t publisher_cleanup(publisher_t* pub) {
+	PUBLISH_ARG_NULL_CHECK(pub);
 	z_drop(z_move(pub->session));
 	return PUBLISH_OK;
 }
 
 publish_error_t publish_frame(publisher_t* pub, sensor_frame_t* frame) {
+	PUBLISH_ARG_NULL_CHECK(pub);
+
 	z_result_t z_res;
 	z_owned_bytes_t bytes;
 	z_bytes_copy_from_buf(&bytes, (void*)frame, sizeof(sensor_frame_t));
@@ -107,3 +211,5 @@ publish_error_t publish_frame(publisher_t* pub, sensor_frame_t* frame) {
 	LOG_DEBUG("Published (`z_put`) sensor frame (%u bytes).", sizeof(sensor_frame_t));
 	return PUBLISH_OK;
 }
+
+#endif  /* PUBLISH_ZENOH */
