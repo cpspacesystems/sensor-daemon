@@ -25,14 +25,20 @@ typedef struct {
  * Holistive frame of sensor data.
  */
 typedef struct {
-	sensor_imu_frame_t imu_frame;
 	struct timeval measure_time;
+	sensor_imu_frame_t imu_frame;
 } sensor_frame_t;
 
 /**
  * Timestamp the given frame with the current time.
  */
 void sensor_frame_timestamp(sensor_frame_t* frame);
+
+/**
+ * Returns the "staleness" of the given frame, in seconds since it was measured,
+ * down to a theoretical precision in microseconds.
+ */
+double sensor_frame_staleness(sensor_frame_t* frame);
 
 /**
  * Assemble a `sensor_imu_frame_t` from the given ICM 20948 sensor.

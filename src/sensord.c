@@ -1,11 +1,13 @@
 #include <errno.h>
 #include <fcntl.h>
+#include <stdatomic.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
 
 #include "sensord.h"
+#include "config.h"
 #include "publish.h"
 #include "sensor_frame.h"
 
@@ -101,11 +103,11 @@ sensord_error_t sensord_init(sensord_reciever_t* recv) {
 	 */
 
 	z_config_default(&config);
-	zp_config_insert(z_loan_mut(config), Z_CONFIG_MODE_KEY, Z_CONFIG_MODE_CLIENT);
-	zp_config_insert(z_loan_mut(config), Z_CONFIG_SCOUTING_TIMEOUT_KEY, "16000");
-	zp_config_insert(z_loan_mut(config), Z_CONFIG_CONNECT_KEY, "tcp/10.144.239.91:7447");
-	// zp_config_insert(z_loan_mut(config), Z_CONFIG_MULTICAST_LOCATOR_KEY, Z_CONFIG_MULTICAST_LOCATOR_DEFAULT);
-	// zp_config_insert(z_loan_mut(config), Z_CONFIG_MULTICAST_SCOUTING_KEY, Z_CONFIG_MULTICAST_SCOUTING_DEFAULT);
+	zp_config_insert(z_loan_mut(config), Z_CONFIG_MODE_KEY, Z_CONFIG_MODE_PEER);
+	// zp_config_insert(z_loan_mut(config), Z_CONFIG_SCOUTING_TIMEOUT_KEY, "16000");
+	// zp_config_insert(z_loan_mut(config), Z_CONFIG_CONNECT_KEY, "tcp/127.0.0.1:7447");
+	zp_config_insert(z_loan_mut(config), Z_CONFIG_MULTICAST_LOCATOR_KEY, Z_CONFIG_MULTICAST_LOCATOR_DEFAULT);
+	zp_config_insert(z_loan_mut(config), Z_CONFIG_MULTICAST_SCOUTING_KEY, Z_CONFIG_MULTICAST_SCOUTING_DEFAULT);
 	
 
 	/*
@@ -150,11 +152,12 @@ retry_open_session:
 	return PUBLISH_OK;
 }
 
+static volatile atomic_bool sensord_get_callback_done = false;
+
 static void sensord_get_callback(z_loaned_reply_t* reply, void* ctx) {
 	sensor_frame_t* frame = (sensor_frame_t*)ctx;
 
 	if (!z_reply_is_ok(reply)) {
-		LOG_ERROR("Reply was not ok!");
 		return;
 	}
 
@@ -162,13 +165,8 @@ static void sensord_get_callback(z_loaned_reply_t* reply, void* ctx) {
 	const z_loaned_bytes_t* bytes = z_sample_payload(sample);
 
 	z_bytes_reader_t reader = z_bytes_get_reader(bytes);
-	size_t n = z_bytes_reader_read(&reader, (uint8_t*)frame, sizeof *frame);
-
-	if (n != sizeof *frame) {
-		LOG_ERROR("Reply did not contain correct number of bytes (expected %u, got %u)!", sizeof *frame, n);
-	}
-
-	LOG_DEBUG("Zenoh get callback returned.");
+	z_bytes_reader_read(&reader, (uint8_t*)frame, sizeof *frame);
+	sensord_get_callback_done = true;
 }
 
 sensord_error_t sensord_get_sensor_frame(sensord_reciever_t* recv, sensor_frame_t* frame) {
@@ -182,12 +180,13 @@ sensord_error_t sensord_get_sensor_frame(sensord_reciever_t* recv, sensor_frame_
 	z_get_options_default(&opts);
 	z_closure(&get_callback, sensord_get_callback, NULL, (void*)frame);
 
+
 	if ((z_res = z_get(z_loan(recv->session), z_loan(recv->keyexpr), "", z_move(get_callback), &opts)) != Z_OK) {
-		LOG_ERROR("Could not get sensor frame (%i)!", z_res);
 		return PUBLISH_Z_GET;
 	}
 
-	sleep(1);
+	while (!sensord_get_callback_done) {}
+	sensord_get_callback_done = false;
 
 	return PUBLISH_OK;
 }
