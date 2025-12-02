@@ -13,8 +13,8 @@
 #include <stddef.h>
 #include "sensor_frame.h"
 
-// #define PUBLISH_ZENOH
-#define PUBLISH_TMPFS
+#define PUBLISH_ZENOH
+// #define PUBLISH_TMPFS
 
 
 /*
