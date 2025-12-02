@@ -93,7 +93,7 @@ handle_errno:
 sensord_error_t sensord_init(sensord_reciever_t* recv) {
 	SENSORD_CHECK_ARG_NULL(recv);
 	
-	recv->mem_fd = shm_open(PUBLISH_SHM_NAME, O_RDONLY);
+	recv->mem_fd = shm_open(PUBLISH_SHM_NAME, O_RDONLY, 0);
 
 	if (recv->mem_fd < 0) {
 		goto handle_errno;

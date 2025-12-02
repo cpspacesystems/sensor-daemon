@@ -117,7 +117,11 @@ handle_errno:
 publish_error_t publisher_init(publisher_t* pub) {
 	PUBLISH_ARG_NULL_CHECK(pub);
 	
-	pub->mem_fd = shm_open(PUBLISH_SHM_NAME, O_CREAT | O_RDWR | O_TRUNC);
+	pub->mem_fd = shm_open(
+		PUBLISH_SHM_NAME,
+		O_CREAT | O_RDWR | O_TRUNC,
+		S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH
+	);
 
 	if (pub->mem_fd < 0) {
 		LOG_ERROR("Failed to create shared memory with name '%s' (%i)!", PUBLISH_SHM_NAME, errno);
@@ -178,6 +182,10 @@ publish_error_t publisher_cleanup(publisher_t* pub) {
 	}
 
 	if (close(pub->mem_fd) < 0) {
+		goto handle_errno;
+	}
+
+	if (shm_unlink(PUBLISH_SHM_NAME) < 0) {
 		goto handle_errno;
 	}
 
