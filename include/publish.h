@@ -58,7 +58,6 @@ typedef struct {
 #endif  /* PUBLISH_ZENOH */
 
 #ifdef PUBLISH_TMPFS
-	// char tempfile_name[sizeof *PUBLISH_TMPFILE_NAME];
 	int tempfile_fd;
 #endif  /* PUBLISH_TMPFS */
 } publisher_t;

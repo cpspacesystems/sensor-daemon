@@ -26,9 +26,6 @@
 publish_error_t publisher_init(publisher_t* publisher) {
 	PUBLISH_ARG_NULL_CHECK(publisher);
 	
-	// strcpy(publisher->tempfile_name, PUBLISH_TMPFILE_NAME);
-	// publisher->tempfile_fd = mkstemp(publisher->tempfile_name);
-
 	publisher->tempfile_fd = open(PUBLISH_TMPFILE_NAME, O_RDWR | O_CREAT);
 
 	if (publisher->tempfile_fd < 0) {
