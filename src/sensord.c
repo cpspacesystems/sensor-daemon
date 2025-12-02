@@ -99,8 +99,16 @@ sensord_error_t sensord_init(sensord_reciever_t* recv) {
 		goto handle_errno;
 	}
 
-	recv->mutex = mmap(NULL, PUBLISH_SHM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, recv->mem_fd, 0);
-	recv->frame = (sensor_frame_t*)(((void*)recv->mutex) + sizeof(pthread_mutex_t));
+	recv->mutex = mmap(
+		NULL,
+		PUBLISH_SHM_SIZE,
+		PROT_READ | PROT_WRITE,
+		MAP_SHARED,
+		recv->mem_fd,
+		0
+	);
+
+	recv->frame = (sensor_frame_t*)((void*)recv->mutex + sizeof(pthread_mutex_t));
 
 	if (recv->mutex == MAP_FAILED) {
 		goto handle_errno;

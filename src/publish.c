@@ -116,7 +116,8 @@ handle_errno:
 
 publish_error_t publisher_init(publisher_t* pub) {
 	PUBLISH_ARG_NULL_CHECK(pub);
-	
+
+	shm_unlink(PUBLISH_SHM_NAME);
 	pub->mem_fd = shm_open(
 		PUBLISH_SHM_NAME,
 		O_CREAT | O_RDWR | O_TRUNC,
@@ -139,11 +140,12 @@ publish_error_t publisher_init(publisher_t* pub) {
 		NULL,
 		PUBLISH_SHM_SIZE,
 		PROT_WRITE | PROT_READ,
-		MAP_SHARED | MAP_LOCKED,
+		MAP_SHARED,
 		pub->mem_fd,
 		0
 	);
-	pub->frame = (sensor_frame_t*)(((void*)pub->mutex) + sizeof(pthread_mutex_t));
+
+	pub->frame = (sensor_frame_t*)((void*)pub->mutex + sizeof(pthread_mutex_t));
 
 	if (pub->mutex == MAP_FAILED) {
 		LOG_ERROR("Failed to map shared memory (%i)!", errno);
