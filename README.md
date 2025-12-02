@@ -2,4 +2,22 @@
 
 ## Building
 
-There is a build script written in Haskell (`build.hs`), but if you dont have the tooling for that installed you can use the bash build script `build.sh`, both will compile the project into a binary named `sensor-daemon`.
+Theres a build script in Haskell which can be run with this command:
+
+```bash
+./build.hs
+```
+
+If you dont have a Haskell enviornment set up you can just install GHC with your package manager.
+
+Using Homebrew:
+
+```bash
+brew install ghc
+```
+
+Using APT:
+
+```bash
+sudo apt install ghc
+```
