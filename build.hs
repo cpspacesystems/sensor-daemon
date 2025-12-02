@@ -4,11 +4,16 @@ import System.Directory
 import System.Process
 import System.FilePath
 import Data.Maybe
-import Data.List (isSuffixOf, isPrefixOf, unsnoc)
+import Data.List (isSuffixOf, isPrefixOf)
 import Control.Monad
 
 -- | A path to a director containing header files which can be included in a C project.
 newtype Include = Include { path :: FilePath }
+
+unsnoc :: [a] -> Maybe ([a], a)
+unsnoc xs = case reverse xs of
+    (y:ys) -> Just (reverse ys, y)
+    [] -> Nothing
 
 sourceDirectory :: FilePath
 sourceDirectory = "src"
