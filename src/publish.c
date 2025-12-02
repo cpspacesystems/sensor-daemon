@@ -9,6 +9,12 @@
 #include "sensor_frame.h"
 #include "log.h"
 
+#ifdef PUBLISH_SHM
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <pthread.h>
+#endif  /* PUBLISH_SHM */
+
 #ifdef PUBLISH_ZENOH
 #include "config.h"
 #include <zenoh-pico.h>
@@ -100,7 +106,131 @@ handle_errno:
 }
 
 #endif  /* PUBLISH_TMPFS */
- 
+
+
+/*
+ * Shared memory backend implementation.
+ */
+
+#ifdef PUBLISH_SHM
+
+publish_error_t publisher_init(publisher_t* pub) {
+	PUBLISH_ARG_NULL_CHECK(pub);
+	
+	pub->mem_fd = shm_open(PUBLISH_SHM_NAME, O_CREAT | O_RDWR | O_TRUNC);
+
+	if (pub->mem_fd < 0) {
+		LOG_ERROR("Failed to create shared memory with name '%s' (%i)!", PUBLISH_SHM_NAME, errno);
+		goto handle_errno;
+	}
+
+	if (ftruncate(pub->mem_fd, PUBLISH_SHM_SIZE)) {
+		LOG_ERROR("Failed to truncate shared memory to %ld bytes (%i)!", PUBLISH_SHM_SIZE, errno);
+		goto handle_errno;
+	}
+
+	LOG_INFO("Created shared memory with name '%s'.", PUBLISH_SHM_NAME);
+
+	pub->mutex = mmap(NULL, PUBLISH_SHM_SIZE, PROT_WRITE, MAP_SHARED, pub->mem_fd, 0);
+	pub->frame = (sensor_frame_t*)((void*)pub->mutex + sizeof(pthread_mutex_t));
+
+	if (pub->mutex == MAP_FAILED) {
+		LOG_ERROR("Failed to map shared memory (%i)!", errno);
+		goto handle_errno;
+	}
+
+	int perror;
+	if ((perror = pthread_mutex_init(pub->mutex, NULL)) != 0) {
+		LOG_ERROR("Failed to initialize mutex (%i)!", perror);
+		goto handle_perror;
+	}
+
+	LOG_INFO("Finished initializing shared memory.");
+
+	return PUBLISH_OK;
+
+handle_errno:
+	switch (errno) {
+		case EACCES:  return PUBLISH_BAD_PERMISSIONS;
+		case EEXIST:  return PUBLISH_ALREADY_OPEN;
+		case ENFILE:
+		case EMFILE:  return PUBLISH_TOO_MANY_FDS;
+		case ENOSPC:  return PUBLISH_NO_STORAGE;
+		case EINTR:   return PUBLISH_INTERRUPTED;
+		case ENOMEM:  return PUBLISH_NO_MEMORY;
+		case EDEADLK: return PUBLISH_DEADLOCK;
+		default:      return PUBLISH_UNKNWON;
+	}
+
+handle_perror:
+	switch (perror) {
+		case ENOMEM:  return PUBLISH_NO_MEMORY;
+		default:      return PUBLISH_UNKNWON;
+	}
+}
+
+publish_error_t publisher_cleanup(publisher_t* pub) {
+	PUBLISH_ARG_NULL_CHECK(pub);
+
+	int perror;
+	if ((perror = pthread_mutex_destroy(pub->mutex)) != 0) {
+		goto handle_errno;
+	}
+
+	if (close(pub->mem_fd) < 0) {
+		goto handle_errno;
+	}
+
+	return PUBLISH_OK;
+
+handle_errno:
+	switch (errno) {
+		case EACCES: return PUBLISH_BAD_PERMISSIONS;
+		case EEXIST: return PUBLISH_ALREADY_OPEN;
+		case ENFILE:
+		case EMFILE: return PUBLISH_TOO_MANY_FDS;
+		case ENOSPC: return PUBLISH_NO_STORAGE;
+		case EINTR:  return PUBLISH_INTERRUPTED;
+		default:     return PUBLISH_UNKNWON;
+	}
+
+handle_perror:
+	switch (perror) {
+		case EBUSY:  return PUBLISH_BUSY;
+		default:     return PUBLISH_UNKNWON;
+	}
+}
+
+publish_error_t publish_frame(publisher_t* pub, sensor_frame_t* frame) {
+	PUBLISH_ARG_NULL_CHECK(pub);
+	PUBLISH_ARG_NULL_CHECK(pub->mutex);
+	PUBLISH_ARG_NULL_CHECK(pub->frame);
+
+	int perror;
+	if ((perror = pthread_mutex_lock(pub->mutex)) != 0) {
+		LOG_ERROR("Failed to lock publish mutex!");
+		goto handle_perror;
+	}
+
+	memcpy(pub->frame, frame, sizeof *frame);
+
+	if ((perror = pthread_mutex_unlock(pub->mutex)) != 0) {
+		LOG_ERROR("Failed to unlock publish mutex!");
+		goto handle_perror;
+	}
+	
+	LOG_DEBUG("Published (`memcpy`) sensor frame (%u bytes).", sizeof *frame);
+	return PUBLISH_OK;
+
+handle_perror:
+	switch (perror) {
+		case EDEADLK: return PUBLISH_DEADLOCK;
+		default:      return PUBLISH_UNKNWON;
+	}
+}
+
+#endif  /* PUBLISH_SHM */
+
 
 /*
  * Zenoh backend implementaton.

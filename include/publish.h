@@ -13,9 +13,34 @@
 #include <stddef.h>
 #include "sensor_frame.h"
 
-#define PUBLISH_ZENOH
 // #define PUBLISH_TMPFS
+#define PUBLISH_SHM
+// #define PUBLISH_ZENOH
 
+
+/*
+ * Tempfile backend definitions.
+ */
+
+#ifdef PUBLISH_TMPFS
+
+#define PUBLISH_TMPFILE_NAME "/tmp/sensord.temp"
+
+#endif  /* PUBLISH_TMPFS */
+
+
+/*
+ * Shared memory backed definitions.
+ */
+
+#ifdef PUBLISH_SHM
+
+#include <pthread.h>
+#define PUBLISH_SHM_NAME "sensord"
+#define PUBLISH_SHM_SIZE (sizeof(pthread_mutex_t) + sizeof(sensor_frame_t))
+
+#endif  /* PUBLISH_SHM */
+ 
 
 /*
  * Zenoh backend definitions.
@@ -36,30 +61,25 @@
 #endif  /* PUBLISH_ZENOH */
 
 
-/*
- * Tempfile backend definitions.
- */
-
-#ifdef PUBLISH_TMPFS
-
-#define PUBLISH_TMPFILE_NAME "/tmp/sensord.temp"
-
-#endif  /* PUBLISH_TMPFS */
-
-
 /**
  * Data needed to publishing. The fields of this type depend on the selected
  * backend.
  */
 typedef struct {
+#ifdef PUBLISH_TMPFS
+	int tempfile_fd;
+#endif  /* PUBLISH_TMPFS */
+
+#ifdef PUBLISH_SHM
+	int mem_fd;
+	pthread_mutex_t* mutex;
+	sensor_frame_t* frame;
+#endif  /* PUBLISH_SHM */
+
 #ifdef PUBLISH_ZENOH
 	z_owned_session_t session;
 	z_owned_keyexpr_t keyexpr;
 #endif  /* PUBLISH_ZENOH */
-
-#ifdef PUBLISH_TMPFS
-	int tempfile_fd;
-#endif  /* PUBLISH_TMPFS */
 } publisher_t;
 
 typedef enum {
@@ -109,6 +129,19 @@ typedef enum {
 #ifdef PUBLISH_TMPFS
 
 #endif  /* PUBLISH_TMPFS */
+
+
+#ifdef PUBLISH_SHM
+	/**
+	 * Operation would cause a deadlock.
+	 */
+	PUBLISH_DEADLOCK = -62,
+
+	/**
+	 * Operation requires the use of a busy resource.
+	 */
+	PUBLISH_BUSY = -63,
+#endif  /* PUBLISH_SHM */
 
 
 #ifdef PUBLISH_ZENOH

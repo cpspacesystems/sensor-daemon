@@ -16,6 +16,12 @@ typedef struct {
 	z_view_keyexpr_t keyexpr;
 #endif  /* PUBLISH_ZENOH */
 
+#ifdef PUBLISH_SHM
+	int mem_fd;
+	pthread_mutex_t* mutex;
+	sensor_frame_t* frame;
+#endif  /* PUBLISH_SHM */
+
 #ifdef PUBLISH_TMPFS
 	int tempfile_fd;
 #endif  /* PUBLISH_TMPFS */
