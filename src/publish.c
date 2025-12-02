@@ -135,8 +135,15 @@ publish_error_t publisher_init(publisher_t* pub) {
 
 	LOG_INFO("Created shared memory with name '%s'.", PUBLISH_SHM_NAME);
 
-	pub->mutex = mmap(NULL, PUBLISH_SHM_SIZE, PROT_WRITE, MAP_SHARED, pub->mem_fd, 0);
-	pub->frame = (sensor_frame_t*)((void*)pub->mutex + sizeof(pthread_mutex_t));
+	pub->mutex = mmap(
+		NULL,
+		PUBLISH_SHM_SIZE,
+		PROT_WRITE | PROT_READ,
+		MAP_SHARED | MAP_LOCKED,
+		pub->mem_fd,
+		0
+	);
+	pub->frame = (sensor_frame_t*)(((void*)pub->mutex) + sizeof(pthread_mutex_t));
 
 	if (pub->mutex == MAP_FAILED) {
 		LOG_ERROR("Failed to map shared memory (%i)!", errno);

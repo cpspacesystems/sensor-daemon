@@ -36,7 +36,7 @@
 #ifdef PUBLISH_SHM
 
 #include <pthread.h>
-#define PUBLISH_SHM_NAME "sensord"
+#define PUBLISH_SHM_NAME "/sensord"
 #define PUBLISH_SHM_SIZE (sizeof(pthread_mutex_t) + sizeof(sensor_frame_t))
 
 #endif  /* PUBLISH_SHM */

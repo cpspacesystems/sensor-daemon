@@ -97,5 +97,6 @@ retry_setup_imu:
 
 		sensor_frame_timestamp(&frame);
 		publish_frame(&publisher, &frame);
+		usleep(100);
 	}
 }
