@@ -1,0 +1,13 @@
+[package]
+name = "sensor-daemon-rs"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = ["publish_zenoh"]
+publish_shm = []
+publish_zenoh = []
+
+[dependencies]
+libc = "0.2"
+zenoh = "1.7"

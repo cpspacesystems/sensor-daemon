@@ -1,7 +1,1 @@
-build
-include/.DS_Store
-src/.DS_Store
-.DS_Store
-sensor-daemon
-sensor-daemon.log
-examples/get-frame/get-frame
+/target
