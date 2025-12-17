@@ -96,7 +96,7 @@ typedef enum {
 
 	ICM_INT_ENABLE_1 = 0x11,
 	ICM_INT_ENABLE_2 = 0x12,
-	ICM_INT_ENABLE_3 = 0x12,
+	ICM_INT_ENABLE_3 = 0x13,
 
 	ICM_I2C_MST_STATUS = 0x17,
 
