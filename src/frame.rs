@@ -2,7 +2,8 @@ use libc::{self, timeval};
 use std::{
     io,
     mem::{self, MaybeUninit},
-    ptr, slice,
+    ptr,
+    time::{Duration, SystemTime},
 };
 
 /// [`SensorFrameData`] with a timestemp. This is the payload for publishing.
@@ -17,13 +18,39 @@ pub struct SensorFrame {
 }
 
 impl SensorFrame {
-    /// Returns a slice of bytes which points to the same memory as `self`.
-    pub fn to_bytes(&self) -> &[u8] {
-        unsafe { slice::from_raw_parts(mem::transmute(ptr::from_ref(self)), size_of::<Self>()) }
+    /// Get the timestamp, as a [`SystemTime`], with which the [`SensorFrame`] was stamped.
+    ///
+    /// [`SystemTime`]: SystemTime
+    /// [`SensorFrame`]: SensorFrame
+    pub fn time(&self) -> SystemTime {
+        // This function is kinda funny, since Rust just uses a structure identical to `timeval`
+        // anyways (at least on unix-like systems), so this _could_ basically be a transmute but
+        // doing this way is safer and checks everything into the type system a bit better.
+        SystemTime::UNIX_EPOCH
+            + Duration::from_secs(self.timestamp.tv_sec as _)
+            + Duration::from_micros(self.timestamp.tv_usec as _)
     }
 
-    pub fn from_bytes(bytes: &[u8]) -> &Self {
-        unsafe { mem::transmute(bytes.as_ptr().as_ref()) }
+    /// Create an array of `u8` bytes which are, bitwise, exactly the same as the given
+    /// [`SensorFrame`].
+    ///
+    /// [`SensorFrame`]: SensorFrame
+    pub fn to_bytes(self) -> [u8; size_of::<Self>()] {
+        unsafe {
+            let self_ptr: *const Self = ptr::from_ref(&self);
+            let arr_ptr: *const [u8; size_of::<Self>()] = mem::transmute(self_ptr);
+            *arr_ptr
+        }
+    }
+
+    /// Creates a [`SensorFrame`] which is identical, bitwise, to the given byte array.
+    ///
+    /// [`SensorFrame`]: SensorFrame
+    pub fn from_bytes(bytes: [u8; size_of::<Self>()]) -> Self {
+        unsafe {
+            let self_ref: &Self = mem::transmute(bytes.as_ptr());
+            self_ref.to_owned()
+        }
     }
 }
 

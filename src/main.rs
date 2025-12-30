@@ -18,11 +18,10 @@ fn main() {
     };
 
     loop {
-        frame::timestamp_frame(frame)
-            .and_then(|f| publisher.publish_frame(f))
-            .unwrap();
+        let stamped_frame = frame::timestamp_frame(frame).unwrap();
+        publisher.publish_frame(stamped_frame.clone()).unwrap();
 
-        println!("Sent frame");
+        println!("Sent frame at {:?}", stamped_frame.time());
 
         frame.gyro_x *= 0.93;
         frame.gyro_y += 0.001;
