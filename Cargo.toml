@@ -7,6 +7,7 @@ edition = "2024"
 default = ["publish_zenoh"]
 publish_shm = []
 publish_zenoh = []
+publish_zenoh_shm = ["zenoh/unstable", "zenoh/shared-memory"]
 
 [dependencies]
 libc = "0.2"

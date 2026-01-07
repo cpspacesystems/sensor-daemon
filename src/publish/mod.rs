@@ -2,6 +2,7 @@ mod shm;
 
 use crate::frame::SensorFrame;
 use std::io;
+use zenoh::Wait;
 
 #[cfg(feature = "publish_shm")]
 use crate::publish::shm::SharedMemory;
@@ -10,7 +11,7 @@ use crate::publish::shm::SharedMemory;
 #[cfg(feature = "publish_shm")]
 const SHM_NAME: &'static str = "/sensord";
 
-#[cfg(feature = "publish_zenoh")]
+#[cfg(any(feature = "publish_zenoh", feature = "publish_zenoh_shm"))]
 const ZENOH_PUB_KEY: &'static str = "cpss/sensor-data";
 
 /// Backend agnostic [`SensorFrame`] publisher, for publishing [`SensorFrame`]s to other processes.
@@ -21,9 +22,9 @@ pub struct Publisher {
     shm: SharedMemory<SensorFrame>,
 }
 
-#[cfg(feature = "publish_zenoh")]
+#[cfg(any(feature = "publish_zenoh", feature = "publish_zenoh_shm"))]
 pub struct Publisher<'a> {
-    session: zenoh::Session,
+    _session: zenoh::Session,
     publisher: zenoh::pubsub::Publisher<'a>,
 }
 
@@ -45,21 +46,53 @@ impl Publisher {
     }
 }
 
-#[cfg(feature = "publish_zenoh")]
+#[cfg(any(feature = "publish_zenoh", feature = "publish_zenoh_shm"))]
 impl<'a> Publisher<'a> {
     pub fn new() -> io::Result<Publisher<'a>> {
         let config = zenoh::Config::default();
-        let session = zenoh::Wait::wait(zenoh::open(config))
+        let session = zenoh::open(config)
+            .wait()
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
-        let publisher = zenoh::Wait::wait(session.declare_publisher(ZENOH_PUB_KEY))
+        let publisher = session
+            .declare_publisher(ZENOH_PUB_KEY)
+            .wait()
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
 
-        Ok(Publisher { session, publisher })
+        Ok(Publisher {
+            _session: session,
+            publisher,
+        })
     }
 
+    #[cfg(feature = "publish_zenoh")]
     pub fn publish_frame(&mut self, frame: SensorFrame) -> io::Result<()> {
-        zenoh::Wait::wait(self.publisher.put(frame.to_bytes()))
+        self.publisher
+            .put(frame.to_bytes())
+            .wait()
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+        Ok(())
+    }
+
+    #[cfg(feature = "publish_zenoh_shm")]
+    pub fn publish_frame(&mut self, frame: SensorFrame) -> io::Result<()> {
+        let provider =
+            zenoh::shm::ShmProviderBuilder::default_backend(zenoh::shm::MemoryLayout::for_type::<
+                SensorFrame,
+            >())
+            .wait()
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+
+        let shared_buf = provider
+            .alloc(zenoh::shm::TypedLayout::<SensorFrame>::new())
+            .wait()
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
+            .initialize(frame);
+
+        self.publisher
+            .put(shared_buf)
+            .wait()
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+
         Ok(())
     }
 }
