@@ -1,9 +1,9 @@
 mod drivers;
-mod frame;
 mod i2c;
 mod publish;
 
-use crate::{frame::SensorFrameData, publish::Publisher};
+use crate::publish::Publisher;
+use sensor_daemon::frame::{self, SensorFrameData};
 
 fn main() {
     let mut publisher = Publisher::new().expect("Should be able to create a publisher");

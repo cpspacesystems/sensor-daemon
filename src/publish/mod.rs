@@ -1,7 +1,14 @@
-mod shm;
+//! Publishing functionality which should not appear in any code consuming the output of sensor
+//! daemon. This module can switch backend depending on the selected feature set, and while the
+//! interface is backend agnostic, the consuming library will not be and needs to be compiled with
+//! the same feature set as the sensor daemon executable.
+
+pub mod shm;
 
 use crate::frame::SensorFrame;
 use std::io;
+
+#[cfg(any(feature = "publish_zenoh", feature = "publish_zenoh_shm"))]
 use zenoh::Wait;
 
 #[cfg(feature = "publish_shm")]
@@ -9,10 +16,10 @@ use crate::publish::shm::SharedMemory;
 
 /// The name used for the shared memory allocation if the shared memory backend is selected.
 #[cfg(feature = "publish_shm")]
-const SHM_NAME: &'static str = "/sensord";
+pub const SHM_NAME: &'static str = "/sensord";
 
 #[cfg(any(feature = "publish_zenoh", feature = "publish_zenoh_shm"))]
-const ZENOH_PUB_KEY: &'static str = "cpss/sensor-data";
+pub const ZENOH_PUB_KEY: &'static str = "cpss/sensor-data";
 
 /// Backend agnostic [`SensorFrame`] publisher, for publishing [`SensorFrame`]s to other processes.
 ///
@@ -48,7 +55,7 @@ impl Publisher {
 
 #[cfg(any(feature = "publish_zenoh", feature = "publish_zenoh_shm"))]
 impl<'a> Publisher<'a> {
-    pub fn new() -> io::Result<Publisher<'a>> {
+    pub(crate) fn new() -> io::Result<Publisher<'a>> {
         let config = zenoh::Config::default();
         let session = zenoh::open(config)
             .wait()
@@ -65,7 +72,7 @@ impl<'a> Publisher<'a> {
     }
 
     #[cfg(feature = "publish_zenoh")]
-    pub fn publish_frame(&mut self, frame: SensorFrame) -> io::Result<()> {
+    pub(crate) fn publish_frame(&mut self, frame: SensorFrame) -> io::Result<()> {
         self.publisher
             .put(frame.to_bytes())
             .wait()
@@ -74,7 +81,7 @@ impl<'a> Publisher<'a> {
     }
 
     #[cfg(feature = "publish_zenoh_shm")]
-    pub fn publish_frame(&mut self, frame: SensorFrame) -> io::Result<()> {
+    pub(crate) fn publish_frame(&mut self, frame: SensorFrame) -> io::Result<()> {
         let provider =
             zenoh::shm::ShmProviderBuilder::default_backend(zenoh::shm::MemoryLayout::for_type::<
                 SensorFrame,

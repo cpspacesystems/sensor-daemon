@@ -1,3 +1,7 @@
+//! Module for frames of sensor info, this module is common between the publishing and all consuming
+//! parts of sensor daemon. This module hold the data definitions and a few utility functions which
+//! are either necessary or helpful in handling sensor information.
+
 use libc::{self, timeval};
 use std::{
     io,

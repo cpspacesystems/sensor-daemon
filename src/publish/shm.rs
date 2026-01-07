@@ -1,5 +1,7 @@
 //! Safe wrapper over LibC shared memory functionality.
 
+#![cfg(feature = "publish_shm")]
+
 use libc::{
     self, O_CREAT, O_RDWR, O_TRUNC, S_IRGRP, S_IROTH, S_IRUSR, S_IWGRP, S_IWUSR, close, ftruncate,
     munmap, pthread_mutex_destroy, pthread_mutex_init, pthread_mutex_lock, pthread_mutex_t,
