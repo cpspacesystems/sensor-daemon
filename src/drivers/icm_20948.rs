@@ -1,3 +1,5 @@
+//! Module for working with the ICM 20948 gyroscope/accelerometer.
+
 use crate::i2c;
 use std::io;
 

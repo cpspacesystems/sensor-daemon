@@ -6,7 +6,7 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-/// [`SensorFrameData`] with a timestemp. This is the payload for publishing.
+/// [`SensorFrameData`] with a timestamp. This is the payload for publishing.
 #[repr(C)]
 #[derive(Debug, Clone)]
 pub struct SensorFrame {
