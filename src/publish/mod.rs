@@ -16,7 +16,7 @@ use crate::publish::shm::SharedMemory;
 
 /// The name used for the shared memory allocation if the shared memory backend is selected.
 #[cfg(feature = "publish_shm")]
-pub const SHM_NAME: &'static str = "/sensord";
+pub const SHM_NAME: &'static str = "sensord";
 
 #[cfg(any(feature = "publish_zenoh", feature = "publish_zenoh_shm"))]
 pub const ZENOH_PUB_KEY: &'static str = "cpss/sensor-data";
