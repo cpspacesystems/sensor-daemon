@@ -61,7 +61,7 @@ where
 
         unsafe {
             // Open our shared memory as a file descriptor.
-            let c_str = name_bytes.as_ptr() as *const i8;
+            let c_str = name_bytes.as_ptr() as *const libc::c_char;
             let fd = shm_open(c_str, oflags, [mode]);
 
             if fd < 0 {
