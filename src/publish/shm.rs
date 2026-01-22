@@ -120,7 +120,11 @@ where
         // For some notes on the inner workings here see `SharedMemory::create`.
 
         unsafe {
-            let c_str = name_bytes.as_ptr() as *const i8;
+            #[cfg(target_os = "macos")]
+            let c_str = name_bytes.as_ptr() as *const libc::c_char;
+            #[cfg(target_os = "linux")]
+            let c_str = name_bytes.as_ptr() as *const u8;
+
             let fd = shm_open(c_str, O_RDWR);
 
             if fd < 0 {
