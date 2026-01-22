@@ -61,7 +61,11 @@ where
 
         unsafe {
             // Open our shared memory as a file descriptor.
+            #[cfg(target_os = "macos")]
             let c_str = name_bytes.as_ptr() as *const libc::c_char;
+            #[cfg(target_os = "linux")]
+            let c_str = name_bytes.as_ptr() as *const u8;
+
             let fd = shm_open(c_str, oflags, [mode]);
 
             if fd < 0 {
