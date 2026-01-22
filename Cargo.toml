@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-default = ["publish_zenoh"]
+default = ["publish_shm"]
 publish_shm = []
 publish_zenoh = []
 publish_zenoh_shm = ["zenoh/unstable", "zenoh/shared-memory"]
