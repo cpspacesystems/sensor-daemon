@@ -119,6 +119,8 @@ where
     /// [`SharedMemory`]: SharedMemory
     pub fn open(name: impl AsRef<Path>) -> io::Result<SharedMemory<T>> {
         let name_bytes = name.as_ref().as_os_str().as_encoded_bytes();
+        let mut name_bytes = name_bytes.to_vec();
+        name_bytes.push(0);
 
         // For some notes on the inner workings here see `SharedMemory::create`.
 
