@@ -4,11 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-default = ["publish_shm"]
-publish_shm = []
-publish_zenoh = []
-publish_zenoh_shm = ["zenoh/unstable", "zenoh/shared-memory"]
+default = []
 
 [dependencies]
-libc = "0.2"
-zenoh = "1.7"
+libc = "0.2.182"
+tism = { path = "../tism" }
