@@ -2,6 +2,7 @@
 //! [`tism`]'s lazy API.
 //!
 //! [`tism`]: tism
+
 use crate::frame::SensorFrame;
 use std::io;
 
