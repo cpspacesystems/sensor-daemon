@@ -5,6 +5,7 @@ use std::{
     fs::File,
     io::{self, Read, Write},
     os::fd::AsRawFd,
+    path::Path,
 };
 
 /// An I2C bus.
@@ -32,12 +33,8 @@ pub enum AddressWidth {
 
 impl Bus {
     /// Open an I2C bus at the given index.
-    pub fn open(bus_num: u8) -> io::Result<Bus> {
-        let file = File::options()
-            .read(true)
-            .write(true)
-            .open(bus_path(bus_num))?;
-
+    pub fn open(path: impl AsRef<Path>) -> io::Result<Bus> {
+        let file = File::open(path)?;
         let mut funcs: usize = 0;
 
         unsafe {
@@ -188,14 +185,6 @@ impl Bus {
 /// [`Functionality`]: Functionality
 fn functionality_present(funcs: usize, f: Functionality) -> bool {
     funcs & f as usize == f as usize
-}
-
-/// Returns the path, as a [`String`], of the I2C bus at the given index. This will be the path to
-/// a device file, but it may or may not exist.
-///
-/// [`String`]: String
-fn bus_path(bus_num: u8) -> String {
-    format!("/dev/i2c-{bus_num}")
 }
 
 /// Data required by `ioctl` for making combined read and write actions over I2C. This is the

@@ -1,6 +1,8 @@
 mod drivers;
 mod i2c;
+mod multibus;
 mod publish;
+mod tom;
 
 use crate::publish::Publisher;
 use sensor_daemon::frame::{self, SensorFrameData};
