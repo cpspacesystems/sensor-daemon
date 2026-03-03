@@ -6,7 +6,7 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-/// A more user-friendly wrapper over the other BMP390 functionality in this module.
+/// A more user-friendly wrapper over an BMP390.
 pub struct Bmp390 {
     bus: Arc<RwLock<i2c::Bus>>,
     address: i2c::Address,
