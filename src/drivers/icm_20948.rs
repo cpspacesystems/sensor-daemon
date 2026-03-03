@@ -20,18 +20,18 @@ pub struct Icm20948 {
 /// [`Icm20948`]: Icm20948
 pub struct Icm20948Frame {
     /// Rotational velocity about the X-axis in degrees per second.
-    gyro_x: f32,
+    pub gyro_x: f32,
     /// Rotational velocity about the Y-axis in degrees per second.
-    gyro_y: f32,
+    pub gyro_y: f32,
     /// Rotational velocity about the Z-axis in degrees per second.
-    gyro_z: f32,
+    pub gyro_z: f32,
 
     /// Acceleration along the X-axis in multiples of gravity.
-    accel_x: f32,
+    pub accel_x: f32,
     /// Acceleration along the Y-axis in multiples of gravity.
-    accel_y: f32,
+    pub accel_y: f32,
     /// Acceleration along the Z-axis in multiples of gravity.
-    accel_z: f32,
+    pub accel_z: f32,
 }
 
 /// The scale/range of accelerometer readings.
