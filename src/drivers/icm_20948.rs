@@ -1,7 +1,266 @@
 //! Module for working with the ICM 20948 gyroscope/accelerometer.
 
 use crate::i2c;
-use std::io;
+use std::{
+    io, mem,
+    sync::{Arc, RwLock},
+};
+
+/// A more user friendly wrapper over an ICM20948.
+pub struct Icm20948 {
+    bus: Arc<RwLock<i2c::Bus>>,
+    address: Address,
+
+    accel_scale: f32,
+    gyro_scale: f32,
+}
+
+/// A frame of sensor data from an [`Icm20948`].
+///
+/// [`Icm20948`]: Icm20948
+pub struct Icm20948Frame {
+    /// Rotational velocity about the X-axis in degrees per second.
+    gyro_x: f32,
+    /// Rotational velocity about the Y-axis in degrees per second.
+    gyro_y: f32,
+    /// Rotational velocity about the Z-axis in degrees per second.
+    gyro_z: f32,
+
+    /// Acceleration along the X-axis in multiples of gravity.
+    accel_x: f32,
+    /// Acceleration along the Y-axis in multiples of gravity.
+    accel_y: f32,
+    /// Acceleration along the Z-axis in multiples of gravity.
+    accel_z: f32,
+}
+
+/// The scale/range of accelerometer readings.
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AccelerometerScale {
+    /// ± 2g
+    Scale2G = 0,
+    /// ± 4g
+    Scale4G = 1,
+    /// ± 8g
+    Scale8G = 2,
+    /// ± 16g
+    Scale16G = 3,
+}
+
+/// The scale/range of gyro readings.
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GyroScale {
+    /// ± 250 degrees per second
+    Scale250DegreesPerSecond = 0,
+    /// ± 500 degrees per second
+    Scale500DegreesPerSecond = 1,
+    /// ± 1000 degrees per second
+    Scale1000DegreesPerSecond = 2,
+    /// ± 2000 degrees per second
+    Scale2000DegreesPerSecond = 3,
+}
+
+impl Icm20948 {
+    /// Open an [`Icm20948`] on the given [`i2c::Bus`].
+    ///
+    /// [`Icm20948`]: Icm20948
+    /// [`i2c::Bus`]: i2c::Bus
+    pub fn open(bus: Arc<RwLock<i2c::Bus>>, ad0_high: bool) -> io::Result<Icm20948> {
+        let mut wr_bus = bus.write().expect("Lock should never be poisoned");
+        let address = setup(&mut wr_bus, ad0_high)?;
+
+        // Select bank 0, any function which use other banks should restore to bank 0 afterwards.
+        write_register(
+            &mut wr_bus,
+            address,
+            Register::Universal(UniversalRegister::RegBankSel),
+            0,
+        )?;
+
+        mem::drop(wr_bus);
+
+        Ok(Icm20948 {
+            bus,
+            address,
+            accel_scale: 2f32,
+            gyro_scale: 250f32,
+        })
+    }
+
+    /// Read a [`Icm20948Frame`] from the [`Icm20948`].
+    ///
+    /// [`Icm20948`]: Icm20948
+    /// [`Icm20948Frame`]: Icm20948Frame
+    pub fn read(&mut self) -> io::Result<Icm20948Frame> {
+        Ok(Icm20948Frame {
+            gyro_x: self.read_gyro_x()?,
+            gyro_y: self.read_gyro_y()?,
+            gyro_z: self.read_gyro_z()?,
+            accel_x: self.read_accel_x()?,
+            accel_y: self.read_accel_y()?,
+            accel_z: self.read_accel_z()?,
+        })
+    }
+
+    /// Read the acceleration in multiples of gravity.
+    pub fn read_accel_x(&mut self) -> io::Result<f32> {
+        let mut wr_bus = self.bus.write().expect("Lock should never be poisoned");
+
+        let raw_accel = read_register_word(
+            &mut wr_bus,
+            self.address,
+            Register::UserBank0(Bank0Register::AccelXoutH),
+            Register::UserBank0(Bank0Register::AccelXoutL),
+        )?;
+
+        Ok((u16::cast_signed(raw_accel) as f32) / self.accel_scale)
+    }
+
+    /// Read the acceleration in multiples of gravity.
+    pub fn read_accel_y(&mut self) -> io::Result<f32> {
+        let mut wr_bus = self.bus.write().expect("Lock should never be poisoned");
+
+        let raw_accel = read_register_word(
+            &mut wr_bus,
+            self.address,
+            Register::UserBank0(Bank0Register::AccelYoutH),
+            Register::UserBank0(Bank0Register::AccelYoutL),
+        )?;
+
+        Ok((u16::cast_signed(raw_accel) as f32) / self.accel_scale)
+    }
+
+    /// Read the acceleration in multiples of gravity.
+    pub fn read_accel_z(&mut self) -> io::Result<f32> {
+        let mut wr_bus = self.bus.write().expect("Lock should never be poisoned");
+
+        let raw_accel = read_register_word(
+            &mut wr_bus,
+            self.address,
+            Register::UserBank0(Bank0Register::AccelZoutH),
+            Register::UserBank0(Bank0Register::AccelZoutL),
+        )?;
+
+        Ok((u16::cast_signed(raw_accel) as f32) / self.accel_scale)
+    }
+
+    /// Rate of rotation around the X axis in degrees per second.
+    pub fn read_gyro_x(&mut self) -> io::Result<f32> {
+        let mut wr_bus = self.bus.write().expect("Lock should never be poisoned");
+
+        let raw_gyro = read_register_word(
+            &mut wr_bus,
+            self.address,
+            Register::UserBank0(Bank0Register::GyroXoutH),
+            Register::UserBank0(Bank0Register::GyroXoutL),
+        )?;
+
+        Ok((u16::cast_signed(raw_gyro) as f32) / self.gyro_scale)
+    }
+
+    /// Rate of rotation around the Y axis in degrees per second.
+    pub fn read_gyro_y(&mut self) -> io::Result<f32> {
+        let mut wr_bus = self.bus.write().expect("Lock should never be poisoned");
+
+        let raw_gyro = read_register_word(
+            &mut wr_bus,
+            self.address,
+            Register::UserBank0(Bank0Register::GyroYoutH),
+            Register::UserBank0(Bank0Register::GyroYoutL),
+        )?;
+
+        Ok((u16::cast_signed(raw_gyro) as f32) / self.gyro_scale)
+    }
+
+    /// Rate of rotation around the Z axis in degrees per second.
+    pub fn read_gyro_z(&mut self) -> io::Result<f32> {
+        let mut wr_bus = self.bus.write().expect("Lock should never be poisoned");
+
+        let raw_gyro = read_register_word(
+            &mut wr_bus,
+            self.address,
+            Register::UserBank0(Bank0Register::GyroZoutH),
+            Register::UserBank0(Bank0Register::GyroZoutL),
+        )?;
+
+        Ok((u16::cast_signed(raw_gyro) as f32) / self.gyro_scale)
+    }
+
+    /// Set the scale with which we measure accelerations. Our precision is inversely proportional
+    /// to this.
+    pub fn set_accelerometer_scale(&mut self, scale: AccelerometerScale) -> io::Result<()> {
+        let data = 0x01 | ((scale as u8) << 1);
+        let mut wr_bus = self.bus.write().expect("Lock should never be poisoned");
+
+        write_register(
+            &mut wr_bus,
+            self.address,
+            Register::Universal(UniversalRegister::RegBankSel),
+            2,
+        )?;
+
+        write_register(
+            &mut wr_bus,
+            self.address,
+            Register::UserBank2(Bank2Register::GyroConfig1),
+            data,
+        )?;
+
+        write_register(
+            &mut wr_bus,
+            self.address,
+            Register::Universal(UniversalRegister::RegBankSel),
+            0,
+        )?;
+
+        self.accel_scale = match scale {
+            AccelerometerScale::Scale2G => 2f32,
+            AccelerometerScale::Scale4G => 4f32,
+            AccelerometerScale::Scale8G => 4f32,
+            AccelerometerScale::Scale16G => 16f32,
+        };
+
+        Ok(())
+    }
+
+    /// Set the scale with which we measure angles. Our precision is inversely proportional to this.
+    pub fn set_gyro_scale(&mut self, scale: GyroScale) -> io::Result<()> {
+        let data = 0x01 | ((scale as u8) << 1);
+        let mut wr_bus = self.bus.write().expect("Lock should never be poisoned");
+
+        write_register(
+            &mut wr_bus,
+            self.address,
+            Register::Universal(UniversalRegister::RegBankSel),
+            2,
+        )?;
+
+        write_register(
+            &mut wr_bus,
+            self.address,
+            Register::UserBank2(Bank2Register::AccelConfig),
+            data,
+        )?;
+
+        write_register(
+            &mut wr_bus,
+            self.address,
+            Register::Universal(UniversalRegister::RegBankSel),
+            0,
+        )?;
+
+        self.gyro_scale = match scale {
+            GyroScale::Scale250DegreesPerSecond => 250f32,
+            GyroScale::Scale500DegreesPerSecond => 500f32,
+            GyroScale::Scale1000DegreesPerSecond => 1000f32,
+            GyroScale::Scale2000DegreesPerSecond => 2000f32,
+        };
+
+        Ok(())
+    }
+}
 
 /// The expected response of the ICM 20948 when requesting the `WHO_AM_I`
 /// ([`Bank0Register::WhoAmI`]) register.
@@ -12,7 +271,7 @@ const WHO_AM_I: u8 = 0xEA;
 /// The address of an ICM 20948.
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum Address {
+enum Address {
     /// The default address with no modifications.
     #[default]
     DefaultAddress = 0b1101000,
@@ -24,7 +283,7 @@ pub enum Address {
 /// All available registers on the ICM 20948. Not all registers are available at all times however,
 /// as each belongs to one of four banks which can be switched between.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Register {
+enum Register {
     Universal(UniversalRegister),
     UserBank0(Bank0Register),
     UserBank1(Bank1Register),
@@ -35,14 +294,14 @@ pub enum Register {
 /// ICM 20948 registers where are available in all user banks.
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum UniversalRegister {
+enum UniversalRegister {
     RegBankSel = 0x7F,
 }
 
 /// Registers which are available when the ICM 20948 is set to use user bank 0.
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Bank0Register {
+enum Bank0Register {
     WhoAmI = 0x00,
 
     UserCtrl = 0x03,
@@ -130,7 +389,7 @@ pub enum Bank0Register {
 /// Registers which are available when the ICM 20948 is set to use user bank 1.
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Bank1Register {
+enum Bank1Register {
     SelfTestXGyro = 0x02,
     SelfTestYGyro = 0x03,
     SelfTestZGyro = 0x04,
@@ -154,7 +413,7 @@ pub enum Bank1Register {
 /// Registers which are available when the ICM 20948 is set to use user bank 2.
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Bank2Register {
+enum Bank2Register {
     GyroSmplrtDiv = 0x00,
 
     GyroConfig1 = 0x01,
@@ -189,7 +448,7 @@ pub enum Bank2Register {
 /// Registers which are available when the ICM 20948 is set to use user bank 3.
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Bank3Register {
+enum Bank3Register {
     I2cMstOdrConfig = 0x00,
     I2cMstCtrl = 0x01,
     I2cMstDelayCtrl = 0x02,
@@ -225,7 +484,7 @@ pub enum Bank3Register {
 /// paramater, which should be `true` if the AD0 pin is set high on the device.
 ///
 /// [`Address`]: Address
-pub fn setup(bus: &mut i2c::Bus, ad0_high: bool) -> io::Result<Address> {
+fn setup(bus: &mut i2c::Bus, ad0_high: bool) -> io::Result<Address> {
     let addr = match ad0_high {
         true => Address::Ad0HighAddress,
         false => Address::DefaultAddress,
@@ -252,7 +511,7 @@ pub fn setup(bus: &mut i2c::Bus, ad0_high: bool) -> io::Result<Address> {
 ///
 /// [`Register`]: Register
 /// [`i2c::Address`]: i2c::Address
-pub fn read_register(bus: &mut i2c::Bus, addr: Address, reg: Register) -> io::Result<u8> {
+fn read_register(bus: &mut i2c::Bus, addr: Address, reg: Register) -> io::Result<u8> {
     let mut buf = [0u8; 1];
     bus.read_register(addr.into(), reg.into(), &mut buf)?;
     Ok(buf[0])
@@ -262,7 +521,7 @@ pub fn read_register(bus: &mut i2c::Bus, addr: Address, reg: Register) -> io::Re
 /// lower bytes of a 16-bit word, combine them into a single `u16` output.
 ///
 /// [`Register`]: Register
-pub fn read_register_word(
+fn read_register_word(
     bus: &mut i2c::Bus,
     addr: Address,
     upper: Register,
@@ -276,12 +535,7 @@ pub fn read_register_word(
 /// Write to a [`Register`] on the ICM 20948.
 ///
 /// [`Register`]: Register
-pub fn write_register(
-    bus: &mut i2c::Bus,
-    addr: Address,
-    reg: Register,
-    value: u8,
-) -> io::Result<()> {
+fn write_register(bus: &mut i2c::Bus, addr: Address, reg: Register, value: u8) -> io::Result<()> {
     bus.write(addr.into(), &[reg.into(), value])?;
     Ok(())
 }
@@ -291,7 +545,7 @@ pub fn write_register(
 /// writing those to the `lower` and `upper` [`Register`]s respectively.
 ///
 /// [`Register`]: Register
-pub fn write_register_word(
+fn write_register_word(
     bus: &mut i2c::Bus,
     addr: Address,
     upper: Register,
