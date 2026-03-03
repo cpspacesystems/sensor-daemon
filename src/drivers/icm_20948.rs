@@ -18,6 +18,7 @@ pub struct Icm20948 {
 /// A frame of sensor data from an [`Icm20948`].
 ///
 /// [`Icm20948`]: Icm20948
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Icm20948Frame {
     /// Rotational velocity about the X-axis in degrees per second.
     pub gyro_x: f32,
