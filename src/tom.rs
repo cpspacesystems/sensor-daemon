@@ -1,7 +1,7 @@
 use crate::{
     drivers::{
-        bmp390::{Bmp390, Bmp390Frame},
-        icm_20948::{Icm20948, Icm20948Frame},
+        bmp390::{self, Bmp390, Bmp390Frame},
+        icm_20948::{self, Icm20948, Icm20948Frame},
     },
     i2c,
     multibus::MultiBus,
@@ -28,15 +28,30 @@ impl TomSensors {
         let bus_2 = Arc::new(RwLock::new(i2c::Bus::open("/dev/i2c-2")?));
 
         let mut gyros = [
-            Icm20948::open(bus_1.clone(), false)?,
-            Icm20948::open(bus_1.clone(), true)?,
-            Icm20948::open(bus_2.clone(), false)?,
+            Icm20948::open(bus_1.clone(), false)?
+                .with_accelerometer_scale(icm_20948::AccelerometerScale::Scale16G)?
+                .with_gyro_scale(icm_20948::GyroScale::Scale2000DegreesPerSecond)?,
+            Icm20948::open(bus_1.clone(), true)?
+                .with_accelerometer_scale(icm_20948::AccelerometerScale::Scale16G)?
+                .with_gyro_scale(icm_20948::GyroScale::Scale2000DegreesPerSecond)?,
+            Icm20948::open(bus_2.clone(), false)?
+                .with_accelerometer_scale(icm_20948::AccelerometerScale::Scale16G)?
+                .with_gyro_scale(icm_20948::GyroScale::Scale2000DegreesPerSecond)?,
         ];
 
         let mut altimeters = [
-            Bmp390::open(bus_1.clone(), false)?,
-            Bmp390::open(bus_2.clone(), false)?,
-            Bmp390::open(bus_2.clone(), true)?,
+            Bmp390::open(bus_1.clone(), false)?.with_oversampling(
+                bmp390::Oversampling::Oversample4x,
+                bmp390::Oversampling::NoOversampling,
+            )?,
+            Bmp390::open(bus_2.clone(), false)?.with_oversampling(
+                bmp390::Oversampling::Oversample4x,
+                bmp390::Oversampling::NoOversampling,
+            )?,
+            Bmp390::open(bus_2.clone(), true)?.with_oversampling(
+                bmp390::Oversampling::Oversample4x,
+                bmp390::Oversampling::NoOversampling,
+            )?,
         ];
 
         let gyro_data = median_gyro_data([gyros[0].read()?, gyros[1].read()?, gyros[2].read()?]);
@@ -53,6 +68,14 @@ impl TomSensors {
             gyro_data,
             altimeter_data,
         })
+    }
+
+    /// Get the most recently updated data available. Call [`TomSensors::update`] to retrieve new
+    /// data which can then be gotten with this method.
+    ///
+    /// [`TomSensors::update`]: TomSensors::update
+    pub fn data(&self) -> (Icm20948Frame, Bmp390Frame) {
+        (self.gyro_data, self.altimeter_data)
     }
 
     /// Update all sensor data, median filtering each data point internally.

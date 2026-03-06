@@ -85,14 +85,23 @@ impl Bmp390 {
         })
     }
 
+    pub fn with_oversampling(
+        mut self,
+        pressure: Oversampling,
+        tempurature: Oversampling,
+    ) -> io::Result<Self> {
+        self.set_oversampling(tempurature, pressure)?;
+        Ok(self)
+    }
+
     /// Set the oversampling options for tempurature and pressure. It is recommended by the BMP390
     /// data sheet that for pressure oversampling x1 through x8 inclusive you use no oversampling
     /// for tempurature, and for pressure oversampling x16 and x32 you use x2 oversampling for
     /// tempurature.
     pub fn set_oversampling(
         &mut self,
-        tempurature: Oversampling,
         pressure: Oversampling,
+        tempurature: Oversampling,
     ) -> io::Result<()> {
         let data = 0u8 | pressure as u8 | ((tempurature as u8) << 3);
         let mut wr_bus = self.bus.write().expect("Lock should never be poisoned");

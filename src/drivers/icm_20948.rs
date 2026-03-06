@@ -80,6 +80,13 @@ impl Icm20948 {
             0,
         )?;
 
+        write_register(
+            &mut wr_bus,
+            address,
+            Register::UserBank0(Bank0Register::IntPinCfg),
+            0b0000_0010,
+        )?;
+
         mem::drop(wr_bus);
 
         Ok(Icm20948 {
@@ -88,6 +95,22 @@ impl Icm20948 {
             accel_scale: 2f32,
             gyro_scale: 250f32,
         })
+    }
+
+    /// Method chaining version of [`Icm20948::set_accelerometer_scale`].
+    ///
+    /// [`Icm20948::set_accelerometer_scale`]: Icm20948::set_accelerometer_scale
+    pub fn with_accelerometer_scale(mut self, scale: AccelerometerScale) -> io::Result<Self> {
+        self.set_accelerometer_scale(scale)?;
+        Ok(self)
+    }
+
+    /// Method chaining version of [`Icm20948::set_gyro_scale`].
+    ///
+    /// [`Icm20948::set_gyro_scale`]: Icm20948::set_gyro_scale
+    pub fn with_gyro_scale(mut self, scale: GyroScale) -> io::Result<Self> {
+        self.set_gyro_scale(scale)?;
+        Ok(self)
     }
 
     /// Read a [`Icm20948Frame`] from the [`Icm20948`].
