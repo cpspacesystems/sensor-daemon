@@ -4,7 +4,6 @@ use crate::{
         icm_20948::{self, Icm20948, Icm20948Frame},
     },
     i2c,
-    multibus::MultiBus,
 };
 use std::{
     io,

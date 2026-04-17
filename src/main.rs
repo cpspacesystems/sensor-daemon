@@ -1,6 +1,5 @@
 mod drivers;
 mod i2c;
-mod multibus;
 mod publish;
 mod tom;
 
