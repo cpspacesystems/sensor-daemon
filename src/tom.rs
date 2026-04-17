@@ -24,8 +24,8 @@ pub struct TomSensors {
 impl TomSensors {
     /// Initialize TOM's sensors.
     pub fn init() -> io::Result<TomSensors> {
-        let bus_1 = Arc::new(RwLock::new(i2c::Bus::open("/dev/i2c-1")?));
-        let bus_2 = Arc::new(RwLock::new(i2c::Bus::open("/dev/i2c-2")?));
+        let bus_1 = Arc::new(RwLock::new(i2c::Bus::open("/dev/i2c-2")?));
+        let bus_2 = Arc::new(RwLock::new(i2c::Bus::open("/dev/i2c-3")?));
 
         let mut gyros = [
             Icm20948::open(bus_1.clone(), false)?
