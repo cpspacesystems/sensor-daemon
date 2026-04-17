@@ -9,6 +9,8 @@ use crate::{
 use std::{
     io,
     sync::{Arc, RwLock},
+    thread,
+    time::Duration,
 };
 
 pub struct TomSensors {
@@ -40,7 +42,7 @@ impl TomSensors {
         ];
 
         let mut altimeters = [
-            Bmp390::open(bus_1.clone(), false)?.with_oversampling(
+            Bmp390::open(bus_1.clone(), true)?.with_oversampling(
                 bmp390::Oversampling::Oversample4x,
                 bmp390::Oversampling::NoOversampling,
             )?,
