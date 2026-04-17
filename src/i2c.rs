@@ -4,7 +4,7 @@ use libc;
 use std::{
     fs::File,
     io::{self, Read, Write},
-    os::fd::AsRawFd,
+    os::{fd::AsRawFd, unix::fs::OpenOptionsExt},
     path::Path,
 };
 
@@ -34,7 +34,11 @@ pub enum AddressWidth {
 impl Bus {
     /// Open an I2C bus at the given index.
     pub fn open(path: impl AsRef<Path>) -> io::Result<Bus> {
-        let file = File::options().write(true).read(true).open(path)?;
+        let file = File::options()
+            .write(true)
+            .read(true)
+            .custom_flags(libc::O_NONBLOCK)
+            .open(path)?;
         let mut funcs: usize = 0;
 
         unsafe {
