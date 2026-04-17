@@ -416,8 +416,8 @@ fn write_register(
     reg: Register,
     data: u8,
 ) -> io::Result<()> {
-    let buf = [reg as u8, data];
-    bus.write(addr, &buf)
+    let mut buf = [reg as u8, data];
+    bus.write(addr, &mut buf)
 }
 
 /// Read out a three-register 24 bit piece of integer data. The given [`Register`] array holds the

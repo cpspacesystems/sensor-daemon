@@ -514,7 +514,7 @@ fn setup(bus: &mut i2c::Bus, ad0_high: bool) -> io::Result<Address> {
         false => Address::DefaultAddress,
     };
 
-    bus.write(addr.into(), &[UniversalRegister::RegBankSel as _, 0])?;
+    bus.write(addr.into(), &mut [UniversalRegister::RegBankSel as _, 0])?;
 
     let mut buf = [0u8];
     bus.read_register(addr.into(), Bank0Register::WhoAmI as _, &mut buf)?;
@@ -560,7 +560,7 @@ fn read_register_word(
 ///
 /// [`Register`]: Register
 fn write_register(bus: &mut i2c::Bus, addr: Address, reg: Register, value: u8) -> io::Result<()> {
-    bus.write(addr.into(), &[reg.into(), value])?;
+    bus.write(addr.into(), &mut [reg.into(), value])?;
     Ok(())
 }
 
@@ -578,8 +578,8 @@ fn write_register_word(
 ) -> io::Result<()> {
     let lsb = (value & 0x00FF) as u8;
     let msb = ((value & 0xFF00) >> 8) as u8;
-    bus.write(addr.into(), &[lower.into(), lsb])?;
-    bus.write(addr.into(), &[upper.into(), msb])?;
+    bus.write(addr.into(), &mut [lower.into(), lsb])?;
+    bus.write(addr.into(), &mut [upper.into(), msb])?;
     Ok(())
 }
 

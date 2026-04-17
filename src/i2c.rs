@@ -166,10 +166,13 @@ impl Bus {
     /// Write the given buffer to the device at the given [`Address`].
     ///
     /// [`Address`]: Address
-    pub fn write(&mut self, addr: Address, buf: &[u8]) -> io::Result<()> {
-        self.set_device(addr)?;
-        self.file.write_all(buf)?;
-        Ok(())
+    pub fn write(&mut self, addr: Address, buf: &mut [u8]) -> io::Result<()> {
+        let mut _buf = [0u8; 16];
+        self.write_read(addr, buf, &mut _buf)
+
+        // self.set_device(addr)?;
+        // self.file.write_all(buf)?;
+        // Ok(())
     }
 
     /// Read from the device at the given [`Address`], placing the read bytes into `buf`. Returns
