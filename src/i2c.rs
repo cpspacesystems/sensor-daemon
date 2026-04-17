@@ -34,7 +34,7 @@ pub enum AddressWidth {
 impl Bus {
     /// Open an I2C bus at the given index.
     pub fn open(path: impl AsRef<Path>) -> io::Result<Bus> {
-        let file = File::open(path)?;
+        let file = File::options().write(true).read(true).open(path)?;
         let mut funcs: usize = 0;
 
         unsafe {
