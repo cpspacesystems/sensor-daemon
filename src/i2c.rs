@@ -38,7 +38,7 @@ impl Bus {
         let mut funcs: usize = 0;
 
         unsafe {
-            if libc::ioctl(file.as_raw_fd(), I2C_FUNCS, [&raw mut funcs]) < 0 {
+            if libc::ioctl(file.as_raw_fd(), I2C_FUNCS, [&raw mut funcs]) == -1 {
                 return Err(io::Error::last_os_error());
             }
         }
@@ -76,8 +76,8 @@ impl Bus {
     fn set_device_unchecked(&mut self, address: u16) -> io::Result<()> {
         unsafe {
             match libc::ioctl(self.file.as_raw_fd(), I2C_SLAVE, [address]) {
-                0 => Ok(()),
-                _ => Err(io::Error::last_os_error()),
+                -1 => Err(io::Error::last_os_error()),
+                _ => Ok(()),
             }
         }
     }
@@ -97,8 +97,8 @@ impl Bus {
 
         unsafe {
             match libc::ioctl(self.file.as_raw_fd(), I2C_TENBIT, [width]) {
-                0 => Ok(()),
-                _ => Err(io::Error::last_os_error()),
+                -1 => Err(io::Error::last_os_error()),
+                _ => Ok(()),
             }
         }
     }
@@ -153,8 +153,8 @@ impl Bus {
 
         unsafe {
             match libc::ioctl(self.file.as_raw_fd(), I2C_RDWR, &raw mut data) {
-                0 => Ok(()),
-                _ => Err(io::Error::last_os_error()),
+                -1 => Err(io::Error::last_os_error()),
+                _ => Ok(()),
             }
         }
     }
