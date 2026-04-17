@@ -3,6 +3,7 @@ use crate::{
         bmp390::{self, Bmp390, Bmp390Frame},
         icm_20948::{self, Icm20948, Icm20948Frame},
     },
+    frame::{SensorFrame, SensorFrameData},
     i2c,
 };
 use std::{
@@ -73,8 +74,11 @@ impl TomSensors {
     /// data which can then be gotten with this method.
     ///
     /// [`TomSensors::update`]: TomSensors::update
-    pub fn data(&self) -> (Icm20948Frame, Bmp390Frame) {
-        (self.gyro_data, self.altimeter_data)
+    pub fn data(&self) -> SensorFrameData {
+        SensorFrameData {
+            gyro_data: self.gyro_data,
+            altimeter_data: self.altimeter_data,
+        }
     }
 
     /// Update all sensor data, median filtering each data point internally.

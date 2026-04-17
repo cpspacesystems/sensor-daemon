@@ -2,6 +2,7 @@
 //! parts of sensor daemon. This module hold the data definitions and a few utility functions which
 //! are either necessary or helpful in handling sensor information.
 
+use crate::drivers::{bmp390::Bmp390Frame, icm_20948::Icm20948Frame};
 use libc::{self, timeval};
 use std::{
     io,
@@ -60,14 +61,10 @@ impl SensorFrame {
 
 /// The data we are concerned with transmitting to other processes.
 #[repr(C)]
-#[derive(Debug, PartialEq, Copy, Clone, Default)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub struct SensorFrameData {
-    pub accel_x: f64,
-    pub accel_y: f64,
-    pub accel_z: f64,
-    pub gyro_x: f64,
-    pub gyro_y: f64,
-    pub gyro_z: f64,
+    pub gyro_data: Icm20948Frame,
+    pub altimeter_data: Bmp390Frame,
 }
 
 /// Timestamp the given [`SensorFrameData`], returning a [`SensorFrame`] stamped with the current

@@ -1,31 +1,26 @@
 mod drivers;
+mod frame;
 mod i2c;
 mod publish;
 mod tom;
 
-use crate::publish::Publisher;
-use sensor_daemon::frame::{self, SensorFrameData};
+use crate::{publish::Publisher, tom::TomSensors};
 
 fn main() {
     let mut publisher = Publisher::new().expect("Should be able to create a publisher");
-
-    let mut frame = SensorFrameData {
-        accel_x: 1.0,
-        accel_y: 0.0,
-        accel_z: -2.0,
-        gyro_x: 1.0,
-        gyro_y: 0.0,
-        gyro_z: -2.0,
-    };
+    let mut sensors = TomSensors::init().expect("Should be able to initialize sensors");
 
     loop {
+        sensors
+            .update()
+            .expect("Should be able to update sensor data");
+
+        println!("Updated sensor frame");
+
+        let frame = sensors.data();
         let stamped_frame = frame::timestamp_frame(frame).unwrap();
         publisher.publish_frame(stamped_frame.clone()).unwrap();
 
         println!("Sent frame at {:?}", stamped_frame.time());
-
-        frame.gyro_x *= 0.93;
-        frame.gyro_y += 0.001;
-        frame.gyro_z *= -0.993;
     }
 }
