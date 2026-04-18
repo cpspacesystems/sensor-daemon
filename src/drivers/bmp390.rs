@@ -316,8 +316,6 @@ fn setup(bus: &mut i2c::Bus, sdo_vddio: bool) -> io::Result<i2c::Address> {
         false => ADDRESS_SDO_VDDIO,
     };
 
-    bus.add_device(addr)?;
-
     let mut buf = [0u8];
     bus.read_register(addr, Register::ChipId as _, &mut buf)?;
 

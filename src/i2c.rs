@@ -57,24 +57,6 @@ impl Bus {
         Ok(Bus { file, funcs })
     }
 
-    /// Add a slave device to the [`i2c::Bus`].
-    ///
-    /// [`i2c::Bus`]: Bus
-    pub fn add_device(&mut self, addr: Address) -> io::Result<()> {
-        let address = match addr {
-            Address::SevenBit(a) => a as _,
-            Address::TenBit(a) => a,
-        };
-
-        unsafe {
-            if libc::ioctl(self.file.as_raw_fd(), I2C_SLAVE, [address]) == -1 {
-                return Err(io::Error::last_os_error());
-            }
-        }
-
-        Ok(())
-    }
-
     /// Set the current device for the [`i2c::Bus`] via its [`Address`].
     ///
     /// [`i2c::Bus`]: Bus
@@ -185,8 +167,37 @@ impl Bus {
     ///
     /// [`Address`]: Address
     pub fn write(&mut self, addr: Address, buf: &mut [u8]) -> io::Result<()> {
-        let mut _buf = [0u8; 16];
-        self.write_read(addr, buf, &mut _buf)
+        let address = match addr {
+            Address::SevenBit(a) => a as _,
+            Address::TenBit(a) => a,
+        };
+
+        const TEN_BIT: u16 = 0x0010;
+
+        let flags = match addr {
+            Address::SevenBit(_) => 0,
+            Address::TenBit(_) => TEN_BIT,
+        };
+
+        let tx_msg = I2cMessage {
+            address,
+            flags,
+            len: buf.len() as _,
+            buf: buf.as_mut_ptr(),
+        };
+
+        let mut messages = [tx_msg];
+        let mut data = I2cReadWriteData {
+            messages: messages.as_mut_ptr(),
+            num_messages: messages.len() as _,
+        };
+
+        unsafe {
+            match libc::ioctl(self.file.as_raw_fd(), I2C_RDWR, &raw mut data) {
+                -1 => Err(io::Error::last_os_error()),
+                _ => Ok(()),
+            }
+        }
     }
 }
 

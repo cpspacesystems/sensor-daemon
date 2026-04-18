@@ -514,7 +514,6 @@ fn setup(bus: &mut i2c::Bus, ad0_high: bool) -> io::Result<Address> {
         false => Address::DefaultAddress,
     };
 
-    bus.add_device(i2c::Address::SevenBit(addr as _))?;
     bus.write(addr.into(), &mut [UniversalRegister::RegBankSel as _, 0])?;
 
     let mut buf = [0u8];
