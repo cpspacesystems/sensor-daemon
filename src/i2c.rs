@@ -3,7 +3,7 @@
 use libc;
 use std::{
     fs::File,
-    io::{self, Read, Write},
+    io::{self, Read},
     os::{fd::AsRawFd, unix::fs::OpenOptionsExt},
     path::Path,
 };
@@ -55,6 +55,24 @@ impl Bus {
         }
 
         Ok(Bus { file, funcs })
+    }
+
+    /// Add a slave device to the [`i2c::Bus`].
+    ///
+    /// [`i2c::Bus`]: Bus
+    pub fn add_device(&mut self, addr: Address) -> io::Result<()> {
+        let address = match addr {
+            Address::SevenBit(a) => a as _,
+            Address::TenBit(a) => a,
+        };
+
+        unsafe {
+            if libc::ioctl(self.file.as_raw_fd(), I2C_SLAVE, [address]) == -1 {
+                return Err(io::Error::last_os_error());
+            }
+        }
+
+        Ok(())
     }
 
     /// Set the current device for the [`i2c::Bus`] via its [`Address`].
@@ -169,19 +187,6 @@ impl Bus {
     pub fn write(&mut self, addr: Address, buf: &mut [u8]) -> io::Result<()> {
         let mut _buf = [0u8; 16];
         self.write_read(addr, buf, &mut _buf)
-
-        // self.set_device(addr)?;
-        // self.file.write_all(buf)?;
-        // Ok(())
-    }
-
-    /// Read from the device at the given [`Address`], placing the read bytes into `buf`. Returns
-    /// the number of bytes read.
-    ///
-    /// [`Address`]: Address
-    pub fn read(&mut self, addr: Address, buf: &mut [u8]) -> io::Result<usize> {
-        self.set_device(addr)?;
-        self.file.read(buf)
     }
 }
 
