@@ -42,6 +42,11 @@ impl Bus {
         let mut funcs: usize = 0;
 
         unsafe {
+            // units of 10ms, 25 * 10ms == 250ms
+            if libc::ioctl(file.as_raw_fd(), I2C_TIMEOUT, 25) == -1 {
+                return Err(io::Error::last_os_error());
+            }
+
             if libc::ioctl(file.as_raw_fd(), I2C_FUNCS, [&raw mut funcs]) == -1 {
                 return Err(io::Error::last_os_error());
             }
