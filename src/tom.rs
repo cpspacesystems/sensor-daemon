@@ -3,21 +3,27 @@ use crate::{
         bmp390::{self, Bmp390, Bmp390Frame},
         icm_20948::{self, Icm20948, Icm20948Frame},
     },
-    frame::{SensorFrame, SensorFrameData},
+    fallible::FallibleDevice,
+    frame::SensorFrameData,
     i2c,
 };
 use std::{
+    convert::Infallible,
     io,
     sync::{Arc, RwLock},
-    thread,
-    time::Duration,
 };
 
+/// Type for all the TOM specific stuff, this is where sensor data is updated, stored, filtered, and
+/// managed. Most of the time [`TomSensors`]'s functions will swallow errors, rather than propogate
+/// them, since the whole point is redundancy here.
+///
+/// [`TomSensors`]: TomSensors
+#[derive(Debug)]
 pub struct TomSensors {
     busses: [Arc<RwLock<i2c::Bus>>; 2],
 
-    gyros: [Icm20948; 3],
-    altimeters: [Bmp390; 3],
+    gyros: [FallibleDevice<Icm20948, io::Result<Infallible>>; 3],
+    altimeters: [FallibleDevice<Bmp390, io::Result<Infallible>>; 3],
 
     gyro_data: Icm20948Frame,
     altimeter_data: Bmp390Frame,
@@ -30,37 +36,77 @@ impl TomSensors {
         let bus_2 = Arc::new(RwLock::new(i2c::Bus::open("/dev/i2c-3")?));
 
         let mut gyros = [
-            Icm20948::open(bus_1.clone(), false)?
-                .with_accelerometer_scale(icm_20948::AccelerometerScale::Scale16G)?
-                .with_gyro_scale(icm_20948::GyroScale::Scale2000DegreesPerSecond)?,
-            Icm20948::open(bus_1.clone(), true)?
-                .with_accelerometer_scale(icm_20948::AccelerometerScale::Scale16G)?
-                .with_gyro_scale(icm_20948::GyroScale::Scale2000DegreesPerSecond)?,
-            Icm20948::open(bus_2.clone(), false)?
-                .with_accelerometer_scale(icm_20948::AccelerometerScale::Scale16G)?
-                .with_gyro_scale(icm_20948::GyroScale::Scale2000DegreesPerSecond)?,
+            FallibleDevice::new(
+                Icm20948::open(bus_1.clone(), false)
+                    .and_then(|icm| {
+                        icm.with_accelerometer_scale(icm_20948::AccelerometerScale::Scale16G)
+                    })
+                    .and_then(|icm| {
+                        icm.with_gyro_scale(icm_20948::GyroScale::Scale2000DegreesPerSecond)
+                    }),
+                "ICM20948 @ I2C 2 0x68",
+            ),
+            FallibleDevice::new(
+                Icm20948::open(bus_1.clone(), true)
+                    .and_then(|icm| {
+                        icm.with_accelerometer_scale(icm_20948::AccelerometerScale::Scale16G)
+                    })
+                    .and_then(|icm| {
+                        icm.with_gyro_scale(icm_20948::GyroScale::Scale2000DegreesPerSecond)
+                    }),
+                "ICM20948 @ I2C 2 0x69",
+            ),
+            FallibleDevice::new(
+                Icm20948::open(bus_2.clone(), false)
+                    .and_then(|icm| {
+                        icm.with_accelerometer_scale(icm_20948::AccelerometerScale::Scale16G)
+                    })
+                    .and_then(|icm| {
+                        icm.with_gyro_scale(icm_20948::GyroScale::Scale2000DegreesPerSecond)
+                    }),
+                "ICM20948 @ I2C 3 0x68",
+            ),
         ];
 
         let mut altimeters = [
-            Bmp390::open(bus_1.clone(), true)?.with_oversampling(
-                bmp390::Oversampling::Oversample4x,
-                bmp390::Oversampling::NoOversampling,
-            )?,
-            Bmp390::open(bus_2.clone(), false)?.with_oversampling(
-                bmp390::Oversampling::Oversample4x,
-                bmp390::Oversampling::NoOversampling,
-            )?,
-            Bmp390::open(bus_2.clone(), true)?.with_oversampling(
-                bmp390::Oversampling::Oversample4x,
-                bmp390::Oversampling::NoOversampling,
-            )?,
+            FallibleDevice::new(
+                Bmp390::open(bus_1.clone(), true).and_then(|bmp| {
+                    bmp.with_oversampling(
+                        bmp390::Oversampling::Oversample4x,
+                        bmp390::Oversampling::NoOversampling,
+                    )
+                }),
+                "BMP390 @ I2C 2 0x77",
+            ),
+            FallibleDevice::new(
+                Bmp390::open(bus_2.clone(), false).and_then(|bmp| {
+                    bmp.with_oversampling(
+                        bmp390::Oversampling::Oversample4x,
+                        bmp390::Oversampling::NoOversampling,
+                    )
+                }),
+                "BMP390 @ I2C 3 0x76",
+            ),
+            FallibleDevice::new(
+                Bmp390::open(bus_2.clone(), true).and_then(|bmp| {
+                    bmp.with_oversampling(
+                        bmp390::Oversampling::Oversample4x,
+                        bmp390::Oversampling::NoOversampling,
+                    )
+                }),
+                "BMP390 @ I2C 3 0x77",
+            ),
         ];
 
-        let gyro_data = median_gyro_data([gyros[0].read()?, gyros[1].read()?, gyros[2].read()?]);
+        let gyro_data = median_gyro_data([
+            gyros[0].run(Icm20948::read).unwrap_or_default(),
+            gyros[1].run(Icm20948::read).unwrap_or_default(),
+            gyros[2].run(Icm20948::read).unwrap_or_default(),
+        ]);
         let altimeter_data = median_altimeter_data([
-            altimeters[0].read()?,
-            altimeters[1].read()?,
-            altimeters[2].read()?,
+            altimeters[0].run(Bmp390::read).unwrap_or_default(),
+            altimeters[1].run(Bmp390::read).unwrap_or_default(),
+            altimeters[2].run(Bmp390::read).unwrap_or_default(),
         ]);
 
         Ok(TomSensors {
@@ -84,20 +130,18 @@ impl TomSensors {
     }
 
     /// Update all sensor data, median filtering each data point internally.
-    pub fn update(&mut self) -> io::Result<()> {
+    pub fn update(&mut self) {
         self.gyro_data = median_gyro_data([
-            self.gyros[0].read()?,
-            self.gyros[1].read()?,
-            self.gyros[2].read()?,
+            self.gyros[0].run(Icm20948::read).unwrap_or_default(),
+            self.gyros[1].run(Icm20948::read).unwrap_or_default(),
+            self.gyros[2].run(Icm20948::read).unwrap_or_default(),
         ]);
 
         self.altimeter_data = median_altimeter_data([
-            self.altimeters[0].read()?,
-            self.altimeters[1].read()?,
-            self.altimeters[2].read()?,
+            self.altimeters[0].run(Bmp390::read).unwrap_or_default(),
+            self.altimeters[1].run(Bmp390::read).unwrap_or_default(),
+            self.altimeters[2].run(Bmp390::read).unwrap_or_default(),
         ]);
-
-        Ok(())
     }
 
     /// Get the lastest gyro data. This data has been median filtered.

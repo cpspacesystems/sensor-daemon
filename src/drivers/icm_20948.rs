@@ -7,6 +7,7 @@ use std::{
 };
 
 /// A more user friendly wrapper over an ICM20948.
+#[derive(Debug)]
 pub struct Icm20948 {
     bus: Arc<RwLock<i2c::Bus>>,
     address: Address,
@@ -18,7 +19,7 @@ pub struct Icm20948 {
 /// A frame of sensor data from an [`Icm20948`].
 ///
 /// [`Icm20948`]: Icm20948
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug, Default)]
 pub struct Icm20948Frame {
     /// Rotational velocity about the X-axis in degrees per second.
     pub gyro_x: f32,

@@ -7,6 +7,7 @@ use std::{
 };
 
 /// A more user-friendly wrapper over an BMP390.
+#[derive(Debug)]
 pub struct Bmp390 {
     bus: Arc<RwLock<i2c::Bus>>,
     address: i2c::Address,
@@ -16,7 +17,7 @@ pub struct Bmp390 {
 /// A frame of data from the [`Bmp390`]. This contains the sensor data from the device.
 ///
 /// [`Bmp390`]: Bmp390
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug, Default)]
 pub struct Bmp390Frame {
     /// Tempurature in celsius.
     pub tempurature: f32,

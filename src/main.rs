@@ -1,4 +1,7 @@
+#![feature(try_trait_v2)]
+
 mod drivers;
+mod fallible;
 mod frame;
 mod i2c;
 mod publish;
@@ -11,9 +14,7 @@ fn main() {
     let mut sensors = TomSensors::init().expect("Should be able to initialize sensors");
 
     loop {
-        sensors
-            .update()
-            .expect("Should be able to update sensor data");
+        sensors.update();
 
         println!("Updated sensor frame");
 
