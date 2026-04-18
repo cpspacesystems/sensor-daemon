@@ -312,8 +312,8 @@ struct FloatingCalibrationData {
 /// [`i2c::Bus`]: i2c::Bus
 fn setup(bus: &mut i2c::Bus, sdo_vddio: bool) -> io::Result<i2c::Address> {
     let addr = match sdo_vddio {
-        true => ADDRESS_DEFAULT,
-        false => ADDRESS_SDO_VDDIO,
+        false => ADDRESS_DEFAULT,
+        true => ADDRESS_SDO_VDDIO,
     };
 
     let mut buf = [0u8];
