@@ -16,12 +16,8 @@ fn main() {
     loop {
         sensors.update();
 
-        println!("Updated sensor frame");
-
         let frame = sensors.data();
         let stamped_frame = frame::timestamp_frame(frame).unwrap();
         publisher.publish_frame(stamped_frame.clone()).unwrap();
-
-        println!("Sent frame at {:?}", stamped_frame.time());
     }
 }
