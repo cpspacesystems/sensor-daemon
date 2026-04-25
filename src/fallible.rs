@@ -53,16 +53,26 @@ where
         ret
     }
 
-    /// Attempt to make a recovery of the device by providing a new instance of it.
-    pub fn attempt_recovery<R, F>(&mut self, r_dev: R)
+    pub fn run_panic<V, F, R>(&mut self, f: F) -> Option<V>
     where
-        R: Try<Output = T, Residual = E>,
+        R: Try<Output = V, Residual = E>,
+        F: FnOnce(&mut T) -> R,
     {
-        if let ControlFlow::Continue(dev) = r_dev.branch() {
-            self.dev = Fallible::Working(dev);
-        } else {
-            eprintln!("Recovery of '{}' failed.", self.name);
+        if self.has_failed {
+            return None;
         }
+
+        let ret = self.dev.run_fallible_panic(f);
+
+        match self.dev.prior_fault() {
+            None => (),
+            Some(e) => {
+                eprintln!("Fallible Device '{}' had fault: {:#?}!", self.name, e);
+                self.has_failed = true;
+            }
+        }
+
+        ret
     }
 }
 
@@ -91,6 +101,24 @@ impl<T, E> Fallible<T, E> {
             },
 
             Fallible::Failed(_) => None,
+        }
+    }
+
+    pub fn run_fallible_panic<V, F, R>(&mut self, f: F) -> Option<V>
+    where
+        R: Try<Output = V, Residual = E>,
+        F: FnOnce(&mut T) -> R,
+        E: Debug,
+    {
+        match self {
+            Fallible::Working(dev) => match f(dev).branch() {
+                ControlFlow::Continue(ret) => Some(ret),
+                ControlFlow::Break(err) => {
+                    panic!("Fallible `run_fallible_panic`: {:#?}!", err)
+                }
+            },
+
+            Fallible::Failed(_) => panic!("Failed called `run_fallible_panic`"),
         }
     }
 
