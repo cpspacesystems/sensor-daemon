@@ -226,6 +226,19 @@ impl Icm20948 {
             RegisterBankId::Bank2 as _,
         )?;
 
+        let sel = read_register(
+            &mut wr_bus,
+            self.address,
+            Register::Universal(UniversalRegister::RegBankSel),
+        )?;
+
+        if sel & 0b00_11_0000 != RegisterBankId::Bank2 as u8 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "ICM 20948 `REG_BANK_SEL` gave unexpected value",
+            ));
+        }
+
         write_register(
             &mut wr_bus,
             self.address,
@@ -239,6 +252,19 @@ impl Icm20948 {
             Register::Universal(UniversalRegister::RegBankSel),
             RegisterBankId::Bank0 as _,
         )?;
+
+        let sel = read_register(
+            &mut wr_bus,
+            self.address,
+            Register::Universal(UniversalRegister::RegBankSel),
+        )?;
+
+        if sel & 0b00_11_0000 != RegisterBankId::Bank0 as u8 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "ICM 20948 `REG_BANK_SEL` gave unexpected value",
+            ));
+        }
 
         self.accel_scale = match scale {
             AccelerometerScale::Scale2G => 2f32,
@@ -262,6 +288,19 @@ impl Icm20948 {
             RegisterBankId::Bank2 as _,
         )?;
 
+        let sel = read_register(
+            &mut wr_bus,
+            self.address,
+            Register::Universal(UniversalRegister::RegBankSel),
+        )?;
+
+        if sel & 0b00_11_0000 != RegisterBankId::Bank2 as u8 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "ICM 20948 `REG_BANK_SEL` gave unexpected value",
+            ));
+        }
+
         write_register(
             &mut wr_bus,
             self.address,
@@ -275,6 +314,19 @@ impl Icm20948 {
             Register::Universal(UniversalRegister::RegBankSel),
             RegisterBankId::Bank0 as _,
         )?;
+
+        let sel = read_register(
+            &mut wr_bus,
+            self.address,
+            Register::Universal(UniversalRegister::RegBankSel),
+        )?;
+
+        if sel & 0b00_11_0000 != RegisterBankId::Bank0 as u8 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "ICM 20948 `REG_BANK_SEL` gave unexpected value",
+            ));
+        }
 
         self.gyro_scale = match scale {
             GyroScale::Scale250DegreesPerSecond => 250f32,
@@ -545,7 +597,7 @@ fn setup(bus: &mut i2c::Bus, ad0_high: bool) -> io::Result<Address> {
 
     if buf[0] & 0b00_11_0000 != RegisterBankId::Bank0 as u8 {
         return Err(io::Error::new(
-            io::ErrorKind::NotFound,
+            io::ErrorKind::InvalidData,
             "ICM 20948 `REG_BANK_SEL` gave unexpected value",
         ));
     }
