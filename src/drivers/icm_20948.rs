@@ -78,7 +78,7 @@ impl Icm20948 {
             &mut wr_bus,
             address,
             Register::Universal(UniversalRegister::RegBankSel),
-            0,
+            RegisterBankId::Bank0 as _,
         )?;
 
         write_register(
@@ -223,7 +223,7 @@ impl Icm20948 {
             &mut wr_bus,
             self.address,
             Register::Universal(UniversalRegister::RegBankSel),
-            2,
+            RegisterBankId::Bank2 as _,
         )?;
 
         write_register(
@@ -237,7 +237,7 @@ impl Icm20948 {
             &mut wr_bus,
             self.address,
             Register::Universal(UniversalRegister::RegBankSel),
-            0,
+            RegisterBankId::Bank0 as _,
         )?;
 
         self.accel_scale = match scale {
@@ -259,7 +259,7 @@ impl Icm20948 {
             &mut wr_bus,
             self.address,
             Register::Universal(UniversalRegister::RegBankSel),
-            2,
+            RegisterBankId::Bank2 as _,
         )?;
 
         write_register(
@@ -273,7 +273,7 @@ impl Icm20948 {
             &mut wr_bus,
             self.address,
             Register::Universal(UniversalRegister::RegBankSel),
-            0,
+            RegisterBankId::Bank0 as _,
         )?;
 
         self.gyro_scale = match scale {
@@ -314,6 +314,14 @@ enum Register {
     UserBank1(Bank1Register),
     UserBank2(Bank2Register),
     UserBank3(Bank3Register),
+}
+
+#[repr(u8)]
+enum RegisterBankId {
+    Bank0 = 0b00_00_0000,
+    Bank1 = 0b00_01_0000,
+    Bank2 = 0b00_10_0000,
+    Bank3 = 0b00_11_0000,
 }
 
 /// ICM 20948 registers where are available in all user banks.
@@ -515,7 +523,13 @@ fn setup(bus: &mut i2c::Bus, ad0_high: bool) -> io::Result<Address> {
         false => Address::DefaultAddress,
     };
 
-    bus.write(addr.into(), &mut [UniversalRegister::RegBankSel as _, 0])?;
+    bus.write(
+        addr.into(),
+        &mut [
+            UniversalRegister::RegBankSel as _,
+            RegisterBankId::Bank0 as _,
+        ],
+    )?;
 
     let mut buf = [0u8];
     bus.read_register(addr.into(), Bank0Register::WhoAmI as _, &mut buf)?;
