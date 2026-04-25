@@ -543,7 +543,7 @@ fn setup(bus: &mut i2c::Bus, ad0_high: bool) -> io::Result<Address> {
 
     bus.read_register(addr.into(), UniversalRegister::RegBankSel as _, &mut buf)?;
 
-    if buf[0] & 0b00_11_0000 == RegisterBankId::Bank0 as u8 {
+    if buf[0] & 0b00_11_0000 != RegisterBankId::Bank0 as u8 {
         return Err(io::Error::new(
             io::ErrorKind::NotFound,
             "ICM 20948 `REG_BANK_SEL` gave unexpected value",
