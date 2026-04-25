@@ -8,4 +8,5 @@ default = []
 
 [dependencies]
 libc = "0.2.182"
+gpsd_client = "0.1.5"
 tism = { path = "../tism" }

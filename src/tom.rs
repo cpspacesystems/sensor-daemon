@@ -2,6 +2,7 @@ use crate::{
     drivers::{
         bmp390::{self, Bmp390, Bmp390Frame},
         icm_20948::{self, Icm20948, Icm20948Frame},
+        neo_m9::{NeoM9, NeoM9Frame},
     },
     fallible::FallibleDevice,
     frame::SensorFrameData,
@@ -18,15 +19,16 @@ use std::{
 /// them, since the whole point is redundancy here.
 ///
 /// [`TomSensors`]: TomSensors
-#[derive(Debug)]
 pub struct TomSensors {
-    busses: [Arc<RwLock<i2c::Bus>>; 2],
+    _busses: [Arc<RwLock<i2c::Bus>>; 2],
 
     gyros: [FallibleDevice<Icm20948, io::Result<Infallible>>; 3],
     altimeters: [FallibleDevice<Bmp390, io::Result<Infallible>>; 3],
+    gps: FallibleDevice<NeoM9, Result<Infallible, gpsd_client::GPSError>>,
 
     gyro_data: Icm20948Frame,
     altimeter_data: Bmp390Frame,
+    gps_data: NeoM9Frame,
 }
 
 impl TomSensors {
@@ -98,23 +100,30 @@ impl TomSensors {
             ),
         ];
 
+        let mut gps = FallibleDevice::new(NeoM9::open(), "NEO M9");
+
         let gyro_data = median_gyro_data([
             gyros[0].run(Icm20948::read).unwrap_or_default(),
             gyros[1].run(Icm20948::read).unwrap_or_default(),
             gyros[2].run(Icm20948::read).unwrap_or_default(),
         ]);
+
         let altimeter_data = median_altimeter_data([
             altimeters[0].run(Bmp390::read).unwrap_or_default(),
             altimeters[1].run(Bmp390::read).unwrap_or_default(),
             altimeters[2].run(Bmp390::read).unwrap_or_default(),
         ]);
 
+        let gps_data = gps.run(NeoM9::read).unwrap_or_default();
+
         Ok(TomSensors {
-            busses: [bus_1, bus_2],
+            _busses: [bus_1, bus_2],
             gyros,
             altimeters,
+            gps,
             gyro_data,
             altimeter_data,
+            gps_data,
         })
     }
 
@@ -126,6 +135,7 @@ impl TomSensors {
         SensorFrameData {
             gyro_data: self.gyro_data,
             altimeter_data: self.altimeter_data,
+            gps_data: self.gps_data,
         }
     }
 
@@ -142,16 +152,8 @@ impl TomSensors {
             self.altimeters[1].run(Bmp390::read).unwrap_or_default(),
             self.altimeters[2].run(Bmp390::read).unwrap_or_default(),
         ]);
-    }
 
-    /// Get the lastest gyro data. This data has been median filtered.
-    pub fn gyro_data(&self) -> Icm20948Frame {
-        self.gyro_data
-    }
-
-    /// Get the lastest altimeter data. This data has been median filtered.
-    pub fn altimeter_data(&self) -> Bmp390Frame {
-        self.altimeter_data
+        self.gps_data = self.gps.run(NeoM9::read).unwrap_or_default();
     }
 }
 
