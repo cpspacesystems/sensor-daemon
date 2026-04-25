@@ -446,7 +446,7 @@ fn pressure_to_altitude(pressure: f32) -> f32 {
 
 fn compensate_tempurature(measurement: u32, calibration_data: &mut FloatingCalibrationData) -> f32 {
     let partial_data_1 = measurement as f32 - calibration_data.par_t1;
-    let partial_data_2 = measurement as f32 * calibration_data.par_t2;
+    let partial_data_2 = (partial_data_1 * calibration_data.par_t2) as f32;
     calibration_data.t_lin = partial_data_2 + partial_data_1.powi(2) * calibration_data.par_t3;
     calibration_data.t_lin
 }
