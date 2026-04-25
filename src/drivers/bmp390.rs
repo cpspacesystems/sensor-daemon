@@ -478,15 +478,15 @@ fn compensate_pressure(measurement: u32, calibration_data: &FloatingCalibrationD
 impl From<CalibrationData> for FloatingCalibrationData {
     fn from(v: CalibrationData) -> Self {
         FloatingCalibrationData {
-            par_t1: v.nvm_par_t1 as f32 / 2f32.powi(-8),
+            par_t1: v.nvm_par_t1 as f32 * 2f32.powi(8),
             par_t2: v.nvm_par_t2 as f32 / 2f32.powi(30),
             par_t3: v.nvm_par_t3 as f32 / 2f32.powi(48),
 
-            par_p1: v.nvm_par_p1 as f32 / 2f32.powi(20),
-            par_p2: v.nvm_par_p2 as f32 / 2f32.powi(29),
+            par_p1: (v.nvm_par_p1 as f32 - 2f32.powi(14)) / 2f32.powi(20),
+            par_p2: (v.nvm_par_p2 as f32 - 2f32.powi(14)) / 2f32.powi(29),
             par_p3: v.nvm_par_p3 as f32 / 2f32.powi(32),
             par_p4: v.nvm_par_p4 as f32 / 2f32.powi(37),
-            par_p5: v.nvm_par_p5 as f32 / 2f32.powi(-3),
+            par_p5: v.nvm_par_p5 as f32 * 2f32.powi(3),
             par_p6: v.nvm_par_p6 as f32 / 2f32.powi(6),
             par_p7: v.nvm_par_p7 as f32 / 2f32.powi(8),
             par_p8: v.nvm_par_p8 as f32 / 2f32.powi(15),
