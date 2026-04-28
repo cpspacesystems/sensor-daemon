@@ -242,7 +242,7 @@ impl Icm20948 {
         write_register(
             &mut wr_bus,
             self.address,
-            Register::UserBank2(Bank2Register::GyroConfig1),
+            Register::UserBank2(Bank2Register::AccelConfig),
             data,
         )?;
 
@@ -304,7 +304,7 @@ impl Icm20948 {
         write_register(
             &mut wr_bus,
             self.address,
-            Register::UserBank2(Bank2Register::AccelConfig),
+            Register::UserBank2(Bank2Register::GyroConfig1),
             data,
         )?;
 
