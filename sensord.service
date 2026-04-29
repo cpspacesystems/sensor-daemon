@@ -1,0 +1,6 @@
+[Unit]
+Description=sensor daemon
+[Service]
+ExecStart=/opt/sensor-daemon/target/debug/sensor-daemon
+[Install]
+WantedBy=multi-user.target
