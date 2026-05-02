@@ -5,7 +5,7 @@ use crate::{
         neo_m9::{NeoM9, NeoM9Frame},
     },
     fallible::FallibleDevice,
-    frame::SensorFrameData,
+    frame::SensorFrame,
     i2c,
 };
 use std::{
@@ -131,8 +131,8 @@ impl TomSensors {
     /// data which can then be gotten with this method.
     ///
     /// [`TomSensors::update`]: TomSensors::update
-    pub fn data(&self) -> SensorFrameData {
-        SensorFrameData {
+    pub fn data(&self) -> SensorFrame {
+        SensorFrame {
             gyro_data: self.gyro_data,
             altimeter_data: self.altimeter_data,
             gps_data: self.gps_data,
@@ -159,7 +159,7 @@ impl TomSensors {
 
 fn median_altimeter_data(frames: [Bmp390Frame; 3]) -> Bmp390Frame {
     Bmp390Frame {
-        tempurature: median_filter(frames.map(|f| f.tempurature)),
+        temperature: median_filter(frames.map(|f| f.temperature)),
         pressure: median_filter(frames.map(|f| f.pressure)),
         altitude: median_filter(frames.map(|f| f.altitude)),
     }

@@ -4,6 +4,8 @@ use crate::i2c;
 use std::{
     io, mem,
     sync::{Arc, RwLock},
+    thread,
+    time::Duration,
 };
 
 /// A more user friendly wrapper over an ICM20948.

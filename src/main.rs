@@ -2,12 +2,17 @@
 
 mod drivers;
 mod fallible;
+mod fb;
 mod frame;
 mod i2c;
 mod publish;
 mod tom;
 
 use crate::{publish::Publisher, tom::TomSensors};
+
+#[allow(dead_code, unused_imports)]
+#[path = "./SensorFrame_generated.rs"]
+mod sensor_frame_generated;
 
 fn main() {
     let mut publisher = Publisher::new().expect("Should be able to create a publisher");
@@ -17,7 +22,6 @@ fn main() {
         sensors.update();
 
         let frame = sensors.data();
-        let stamped_frame = frame::timestamp_frame(frame).unwrap();
-        publisher.publish_frame(stamped_frame.clone()).unwrap();
+        publisher.publish_frame(frame.clone()).unwrap();
     }
 }

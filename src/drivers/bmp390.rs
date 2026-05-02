@@ -20,7 +20,7 @@ pub struct Bmp390 {
 #[derive(Clone, Copy, PartialEq, Debug, Default)]
 pub struct Bmp390Frame {
     /// Tempurature in celsius.
-    pub tempurature: f32,
+    pub temperature: f32,
 
     /// Pressure in pascals.
     pub pressure: f32,
@@ -80,7 +80,7 @@ impl Bmp390 {
         let altitude = pressure_to_altitude(pressure);
 
         Ok(Bmp390Frame {
-            tempurature,
+            temperature: tempurature,
             pressure,
             altitude,
         })

@@ -3,15 +3,18 @@
 //!
 //! [`tism`]: tism
 
-use crate::frame::SensorFrame;
+use crate::{fb, frame::SensorFrame};
 use std::io;
 
 /// The name of the shared memory allocation used by sensor daemon.
 pub const SHM_NAME: &'static str = "sensord";
 
+/// Size of the flatbuffer.
+pub const FRAME_SIZE: usize = 78;
+
 /// Owning type of the resources required to publish data to other processes.
 pub struct Publisher {
-    shm: tism::lazy::LazyOwnedSharedMemory<SensorFrame, &'static str>,
+    shm: tism::lazy::LazyOwnedSharedMemory<[u8; FRAME_SIZE], &'static str>,
 }
 
 impl Publisher {
@@ -29,7 +32,36 @@ impl Publisher {
     ///
     /// [`SensorFrame`]: SensorFrame
     pub fn publish_frame(&mut self, frame: SensorFrame) -> io::Result<()> {
-        self.shm.write(frame)?;
+        let fb = fb::create_fb_frame(frame);
+
+        if fb.len() != FRAME_SIZE {
+            eprintln!(
+                "Framebuffer length and `FRAME_SIZE` don't match! ({} and {})",
+                fb.len(),
+                FRAME_SIZE
+            );
+
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!(
+                    "Flatbuffer length and `FRAME_SIZE` don't match! ({} and {})",
+                    fb.len(),
+                    FRAME_SIZE
+                ),
+            ));
+        }
+
+        let arr = match fb.as_array::<FRAME_SIZE>() {
+            Some(arr) => *arr,
+            None => {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "Could not make fixed size array from flatbuffer slice",
+                ));
+            }
+        };
+
+        self.shm.write(arr)?;
         Ok(())
     }
 }

@@ -9,23 +9,23 @@ pub struct NeoM9 {
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct NeoM9Frame {
     /// Speed over the ground in meters per second.
-    speed: f32,
+    pub(crate) speed: f32,
     /// Heading over the ground in degrees from true north.
-    heading: f32,
+    pub(crate) heading: f32,
     /// Latitude in degrees.
-    latitude: f64,
+    pub(crate) latitude: f64,
     /// Longitude in degrees.
-    longitude: f64,
+    pub(crate) longitude: f64,
     /// Estimated speed error in meters per second with 95% confidence.
-    estimated_speed_error: f32,
+    pub(crate) estimated_speed_error: f32,
     /// Estimated longitude error in degrees with 95% confidence.
-    estimated_longitude_error: f32,
+    pub(crate) estimated_longitude_error: f32,
     /// Estimated latitude error in degrees with 95% confidence.
-    estimated_latitude_error: f32,
+    pub(crate) estimated_latitude_error: f32,
     /// Number of connected satalites.
-    satellites: u8,
+    pub(crate) satellites: u8,
     /// Number of satalites with valid data.
-    valid_satellites: u8,
+    pub(crate) valid_satellites: u8,
 }
 
 impl NeoM9 {

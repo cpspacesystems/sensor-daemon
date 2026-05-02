@@ -3,7 +3,7 @@
 use libc;
 use std::{
     fs::File,
-    io::{self, Read},
+    io,
     os::{fd::AsRawFd, unix::fs::OpenOptionsExt},
     path::Path,
 };
