@@ -12,7 +12,6 @@ use std::{
 };
 
 /// [`SensorFrameData`] with a timestamp. This is the payload for publishing.
-#[repr(C)]
 #[derive(Debug, Clone)]
 pub struct SensorFrame {
     /// `timestamp` is a linux `struct timeval` to allow for easy inter-op with C code.
@@ -60,7 +59,6 @@ impl SensorFrame {
 }
 
 /// The data we are concerned with transmitting to other processes.
-#[repr(C)]
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct SensorFrameData {
     pub gyro_data: Icm20948Frame,
