@@ -603,6 +603,10 @@ fn setup(bus: &mut i2c::Bus, ad0_high: bool) -> io::Result<Address> {
     }
 
     bus.write(addr.into(), &mut [Bank0Register::PwrMgmt1 as _, 0x81])?;
+
+    // Wait for chip to restart
+    thread::sleep(Duration::from_millis(50));
+
     bus.write(addr.into(), &mut [Bank0Register::PwrMgmt1 as _, 0x01])?;
 
     bus.write(addr.into(), &mut [Bank0Register::PwrMgmt2 as _, 0])?;
