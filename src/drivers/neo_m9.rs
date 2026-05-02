@@ -23,9 +23,9 @@ pub struct NeoM9Frame {
     /// Estimated latitude error in degrees with 95% confidence.
     estimated_latitude_error: f32,
     /// Number of connected satalites.
-    satalites: u8,
+    satellites: u8,
     /// Number of satalites with valid data.
-    valid_satalites: u8,
+    valid_satellites: u8,
 }
 
 impl NeoM9 {
@@ -50,8 +50,8 @@ impl From<GPSData> for NeoM9Frame {
         NeoM9Frame {
             speed: v.speed,
             heading: v.track,
-            satalites: v.sats,
-            valid_satalites: v.sats_valid,
+            satellites: v.sats,
+            valid_satellites: v.sats_valid,
             latitude: v.lat,
             longitude: v.lon,
             estimated_speed_error: v.eps,
