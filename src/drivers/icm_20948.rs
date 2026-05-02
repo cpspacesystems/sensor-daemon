@@ -4,6 +4,8 @@ use crate::i2c;
 use std::{
     io, mem,
     sync::{Arc, RwLock},
+    thread,
+    time::Duration
 };
 
 /// A more user friendly wrapper over an ICM20948.
@@ -603,6 +605,10 @@ fn setup(bus: &mut i2c::Bus, ad0_high: bool) -> io::Result<Address> {
     }
 
     bus.write(addr.into(), &mut [Bank0Register::PwrMgmt1 as _, 0x81])?;
+
+    // Wait for chip to restart
+    thread::sleep(Duration::from_millis(50));
+
     bus.write(addr.into(), &mut [Bank0Register::PwrMgmt1 as _, 0x01])?;
 
     bus.write(addr.into(), &mut [Bank0Register::PwrMgmt2 as _, 0])?;
