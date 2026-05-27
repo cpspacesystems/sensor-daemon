@@ -10,7 +10,7 @@ use std::io;
 pub const SHM_NAME: &'static str = "sensord";
 
 /// Size of the flatbuffer.
-pub const FRAME_SIZE: usize = 78;
+pub const FRAME_SIZE: usize = 96;
 
 /// Owning type of the resources required to publish data to other processes.
 pub struct Publisher {

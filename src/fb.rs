@@ -3,7 +3,7 @@ use crate::{
     frame::SensorFrame,
     sensor_frame_generated::cpss::{self},
 };
-use flatbuffers;
+use flatbuffers::{self, WIPOffset};
 
 /// Create the raw data used by flatbuffer to represent the given [`SensorFrame`].
 ///
@@ -67,6 +67,7 @@ pub fn create_fb_frame(
     };
 
     let _ = cpss::tom::sensord::SensorFrame::create(&mut fb_builder, &args);
+    fb_builder.finish_minimal(WIPOffset::<()>::new(0));
     let data = fb_builder.finished_data();
     data.to_vec()
 }
