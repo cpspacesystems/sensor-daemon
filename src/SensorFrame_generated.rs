@@ -13,6 +13,645 @@ pub mod tom {
 pub mod sensord {
 
 
+// struct SensorFrameData, aligned to 8
+#[repr(transparent)]
+#[derive(Clone, Copy, PartialEq)]
+pub struct SensorFrameData(pub [u8; 80]);
+impl Default for SensorFrameData { 
+  fn default() -> Self { 
+    Self([0; 80])
+  }
+}
+impl ::core::fmt::Debug for SensorFrameData {
+  fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+    f.debug_struct("SensorFrameData")
+      .field("gyro_x", &self.gyro_x())
+      .field("gyro_y", &self.gyro_y())
+      .field("gyro_z", &self.gyro_z())
+      .field("accel_x", &self.accel_x())
+      .field("accel_y", &self.accel_y())
+      .field("accel_z", &self.accel_z())
+      .field("temperature", &self.temperature())
+      .field("pressure", &self.pressure())
+      .field("altitude", &self.altitude())
+      .field("speed", &self.speed())
+      .field("heading", &self.heading())
+      .field("latitude", &self.latitude())
+      .field("longitude", &self.longitude())
+      .field("estimated_speed_error", &self.estimated_speed_error())
+      .field("estimated_latitude_error", &self.estimated_latitude_error())
+      .field("estimated_longitude_error", &self.estimated_longitude_error())
+      .field("satellites", &self.satellites())
+      .field("valid_satellites", &self.valid_satellites())
+      .finish()
+  }
+}
+
+impl ::flatbuffers::SimpleToVerifyInSlice for SensorFrameData {}
+impl<'a> ::flatbuffers::Follow<'a> for SensorFrameData {
+  type Inner = &'a SensorFrameData;
+  #[inline]
+  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+    unsafe { <&'a SensorFrameData>::follow(buf, loc) }
+  }
+}
+impl<'a> ::flatbuffers::Follow<'a> for &'a SensorFrameData {
+  type Inner = &'a SensorFrameData;
+  #[inline]
+  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+    unsafe { ::flatbuffers::follow_cast_ref::<SensorFrameData>(buf, loc) }
+  }
+}
+impl<'b> ::flatbuffers::Push for SensorFrameData {
+    type Output = SensorFrameData;
+    #[inline]
+    unsafe fn push(&self, dst: &mut [u8], _written_len: usize) {
+        let src = unsafe { ::core::slice::from_raw_parts(self as *const SensorFrameData as *const u8, <Self as ::flatbuffers::Push>::size()) };
+        dst.copy_from_slice(src);
+    }
+    #[inline]
+    fn alignment() -> ::flatbuffers::PushAlignment {
+        ::flatbuffers::PushAlignment::new(8)
+    }
+}
+
+impl<'a> ::flatbuffers::Verifiable for SensorFrameData {
+  #[inline]
+  fn run_verifier(
+    v: &mut ::flatbuffers::Verifier, pos: usize
+  ) -> Result<(), ::flatbuffers::InvalidFlatbuffer> {
+    v.in_buffer::<Self>(pos)
+  }
+}
+
+impl<'a> SensorFrameData {
+  #[allow(clippy::too_many_arguments)]
+  pub fn new(
+    gyro_x: f32,
+    gyro_y: f32,
+    gyro_z: f32,
+    accel_x: f32,
+    accel_y: f32,
+    accel_z: f32,
+    temperature: f32,
+    pressure: f32,
+    altitude: f32,
+    speed: f32,
+    heading: f32,
+    latitude: f64,
+    longitude: f64,
+    estimated_speed_error: f32,
+    estimated_latitude_error: f32,
+    estimated_longitude_error: f32,
+    satellites: u8,
+    valid_satellites: u8,
+  ) -> Self {
+    let mut s = Self([0; 80]);
+    s.set_gyro_x(gyro_x);
+    s.set_gyro_y(gyro_y);
+    s.set_gyro_z(gyro_z);
+    s.set_accel_x(accel_x);
+    s.set_accel_y(accel_y);
+    s.set_accel_z(accel_z);
+    s.set_temperature(temperature);
+    s.set_pressure(pressure);
+    s.set_altitude(altitude);
+    s.set_speed(speed);
+    s.set_heading(heading);
+    s.set_latitude(latitude);
+    s.set_longitude(longitude);
+    s.set_estimated_speed_error(estimated_speed_error);
+    s.set_estimated_latitude_error(estimated_latitude_error);
+    s.set_estimated_longitude_error(estimated_longitude_error);
+    s.set_satellites(satellites);
+    s.set_valid_satellites(valid_satellites);
+    s
+  }
+
+  pub fn gyro_x(&self) -> f32 {
+    let mut mem = ::core::mem::MaybeUninit::<<f32 as ::flatbuffers::EndianScalar>::Scalar>::uninit();
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    ::flatbuffers::EndianScalar::from_little_endian(unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        self.0[0..].as_ptr(),
+        mem.as_mut_ptr() as *mut u8,
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+      mem.assume_init()
+    })
+  }
+
+  pub fn set_gyro_x(&mut self, x: f32) {
+    let x_le = ::flatbuffers::EndianScalar::to_little_endian(x);
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        &x_le as *const _ as *const u8,
+        self.0[0..].as_mut_ptr(),
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+    }
+  }
+
+  pub fn gyro_y(&self) -> f32 {
+    let mut mem = ::core::mem::MaybeUninit::<<f32 as ::flatbuffers::EndianScalar>::Scalar>::uninit();
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    ::flatbuffers::EndianScalar::from_little_endian(unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        self.0[4..].as_ptr(),
+        mem.as_mut_ptr() as *mut u8,
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+      mem.assume_init()
+    })
+  }
+
+  pub fn set_gyro_y(&mut self, x: f32) {
+    let x_le = ::flatbuffers::EndianScalar::to_little_endian(x);
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        &x_le as *const _ as *const u8,
+        self.0[4..].as_mut_ptr(),
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+    }
+  }
+
+  pub fn gyro_z(&self) -> f32 {
+    let mut mem = ::core::mem::MaybeUninit::<<f32 as ::flatbuffers::EndianScalar>::Scalar>::uninit();
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    ::flatbuffers::EndianScalar::from_little_endian(unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        self.0[8..].as_ptr(),
+        mem.as_mut_ptr() as *mut u8,
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+      mem.assume_init()
+    })
+  }
+
+  pub fn set_gyro_z(&mut self, x: f32) {
+    let x_le = ::flatbuffers::EndianScalar::to_little_endian(x);
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        &x_le as *const _ as *const u8,
+        self.0[8..].as_mut_ptr(),
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+    }
+  }
+
+  pub fn accel_x(&self) -> f32 {
+    let mut mem = ::core::mem::MaybeUninit::<<f32 as ::flatbuffers::EndianScalar>::Scalar>::uninit();
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    ::flatbuffers::EndianScalar::from_little_endian(unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        self.0[12..].as_ptr(),
+        mem.as_mut_ptr() as *mut u8,
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+      mem.assume_init()
+    })
+  }
+
+  pub fn set_accel_x(&mut self, x: f32) {
+    let x_le = ::flatbuffers::EndianScalar::to_little_endian(x);
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        &x_le as *const _ as *const u8,
+        self.0[12..].as_mut_ptr(),
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+    }
+  }
+
+  pub fn accel_y(&self) -> f32 {
+    let mut mem = ::core::mem::MaybeUninit::<<f32 as ::flatbuffers::EndianScalar>::Scalar>::uninit();
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    ::flatbuffers::EndianScalar::from_little_endian(unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        self.0[16..].as_ptr(),
+        mem.as_mut_ptr() as *mut u8,
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+      mem.assume_init()
+    })
+  }
+
+  pub fn set_accel_y(&mut self, x: f32) {
+    let x_le = ::flatbuffers::EndianScalar::to_little_endian(x);
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        &x_le as *const _ as *const u8,
+        self.0[16..].as_mut_ptr(),
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+    }
+  }
+
+  pub fn accel_z(&self) -> f32 {
+    let mut mem = ::core::mem::MaybeUninit::<<f32 as ::flatbuffers::EndianScalar>::Scalar>::uninit();
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    ::flatbuffers::EndianScalar::from_little_endian(unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        self.0[20..].as_ptr(),
+        mem.as_mut_ptr() as *mut u8,
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+      mem.assume_init()
+    })
+  }
+
+  pub fn set_accel_z(&mut self, x: f32) {
+    let x_le = ::flatbuffers::EndianScalar::to_little_endian(x);
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        &x_le as *const _ as *const u8,
+        self.0[20..].as_mut_ptr(),
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+    }
+  }
+
+  pub fn temperature(&self) -> f32 {
+    let mut mem = ::core::mem::MaybeUninit::<<f32 as ::flatbuffers::EndianScalar>::Scalar>::uninit();
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    ::flatbuffers::EndianScalar::from_little_endian(unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        self.0[24..].as_ptr(),
+        mem.as_mut_ptr() as *mut u8,
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+      mem.assume_init()
+    })
+  }
+
+  pub fn set_temperature(&mut self, x: f32) {
+    let x_le = ::flatbuffers::EndianScalar::to_little_endian(x);
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        &x_le as *const _ as *const u8,
+        self.0[24..].as_mut_ptr(),
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+    }
+  }
+
+  pub fn pressure(&self) -> f32 {
+    let mut mem = ::core::mem::MaybeUninit::<<f32 as ::flatbuffers::EndianScalar>::Scalar>::uninit();
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    ::flatbuffers::EndianScalar::from_little_endian(unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        self.0[28..].as_ptr(),
+        mem.as_mut_ptr() as *mut u8,
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+      mem.assume_init()
+    })
+  }
+
+  pub fn set_pressure(&mut self, x: f32) {
+    let x_le = ::flatbuffers::EndianScalar::to_little_endian(x);
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        &x_le as *const _ as *const u8,
+        self.0[28..].as_mut_ptr(),
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+    }
+  }
+
+  pub fn altitude(&self) -> f32 {
+    let mut mem = ::core::mem::MaybeUninit::<<f32 as ::flatbuffers::EndianScalar>::Scalar>::uninit();
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    ::flatbuffers::EndianScalar::from_little_endian(unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        self.0[32..].as_ptr(),
+        mem.as_mut_ptr() as *mut u8,
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+      mem.assume_init()
+    })
+  }
+
+  pub fn set_altitude(&mut self, x: f32) {
+    let x_le = ::flatbuffers::EndianScalar::to_little_endian(x);
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        &x_le as *const _ as *const u8,
+        self.0[32..].as_mut_ptr(),
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+    }
+  }
+
+  pub fn speed(&self) -> f32 {
+    let mut mem = ::core::mem::MaybeUninit::<<f32 as ::flatbuffers::EndianScalar>::Scalar>::uninit();
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    ::flatbuffers::EndianScalar::from_little_endian(unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        self.0[36..].as_ptr(),
+        mem.as_mut_ptr() as *mut u8,
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+      mem.assume_init()
+    })
+  }
+
+  pub fn set_speed(&mut self, x: f32) {
+    let x_le = ::flatbuffers::EndianScalar::to_little_endian(x);
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        &x_le as *const _ as *const u8,
+        self.0[36..].as_mut_ptr(),
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+    }
+  }
+
+  pub fn heading(&self) -> f32 {
+    let mut mem = ::core::mem::MaybeUninit::<<f32 as ::flatbuffers::EndianScalar>::Scalar>::uninit();
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    ::flatbuffers::EndianScalar::from_little_endian(unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        self.0[40..].as_ptr(),
+        mem.as_mut_ptr() as *mut u8,
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+      mem.assume_init()
+    })
+  }
+
+  pub fn set_heading(&mut self, x: f32) {
+    let x_le = ::flatbuffers::EndianScalar::to_little_endian(x);
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        &x_le as *const _ as *const u8,
+        self.0[40..].as_mut_ptr(),
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+    }
+  }
+
+  pub fn latitude(&self) -> f64 {
+    let mut mem = ::core::mem::MaybeUninit::<<f64 as ::flatbuffers::EndianScalar>::Scalar>::uninit();
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    ::flatbuffers::EndianScalar::from_little_endian(unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        self.0[48..].as_ptr(),
+        mem.as_mut_ptr() as *mut u8,
+        ::core::mem::size_of::<<f64 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+      mem.assume_init()
+    })
+  }
+
+  pub fn set_latitude(&mut self, x: f64) {
+    let x_le = ::flatbuffers::EndianScalar::to_little_endian(x);
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        &x_le as *const _ as *const u8,
+        self.0[48..].as_mut_ptr(),
+        ::core::mem::size_of::<<f64 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+    }
+  }
+
+  pub fn longitude(&self) -> f64 {
+    let mut mem = ::core::mem::MaybeUninit::<<f64 as ::flatbuffers::EndianScalar>::Scalar>::uninit();
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    ::flatbuffers::EndianScalar::from_little_endian(unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        self.0[56..].as_ptr(),
+        mem.as_mut_ptr() as *mut u8,
+        ::core::mem::size_of::<<f64 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+      mem.assume_init()
+    })
+  }
+
+  pub fn set_longitude(&mut self, x: f64) {
+    let x_le = ::flatbuffers::EndianScalar::to_little_endian(x);
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        &x_le as *const _ as *const u8,
+        self.0[56..].as_mut_ptr(),
+        ::core::mem::size_of::<<f64 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+    }
+  }
+
+  pub fn estimated_speed_error(&self) -> f32 {
+    let mut mem = ::core::mem::MaybeUninit::<<f32 as ::flatbuffers::EndianScalar>::Scalar>::uninit();
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    ::flatbuffers::EndianScalar::from_little_endian(unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        self.0[64..].as_ptr(),
+        mem.as_mut_ptr() as *mut u8,
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+      mem.assume_init()
+    })
+  }
+
+  pub fn set_estimated_speed_error(&mut self, x: f32) {
+    let x_le = ::flatbuffers::EndianScalar::to_little_endian(x);
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        &x_le as *const _ as *const u8,
+        self.0[64..].as_mut_ptr(),
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+    }
+  }
+
+  pub fn estimated_latitude_error(&self) -> f32 {
+    let mut mem = ::core::mem::MaybeUninit::<<f32 as ::flatbuffers::EndianScalar>::Scalar>::uninit();
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    ::flatbuffers::EndianScalar::from_little_endian(unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        self.0[68..].as_ptr(),
+        mem.as_mut_ptr() as *mut u8,
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+      mem.assume_init()
+    })
+  }
+
+  pub fn set_estimated_latitude_error(&mut self, x: f32) {
+    let x_le = ::flatbuffers::EndianScalar::to_little_endian(x);
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        &x_le as *const _ as *const u8,
+        self.0[68..].as_mut_ptr(),
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+    }
+  }
+
+  pub fn estimated_longitude_error(&self) -> f32 {
+    let mut mem = ::core::mem::MaybeUninit::<<f32 as ::flatbuffers::EndianScalar>::Scalar>::uninit();
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    ::flatbuffers::EndianScalar::from_little_endian(unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        self.0[72..].as_ptr(),
+        mem.as_mut_ptr() as *mut u8,
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+      mem.assume_init()
+    })
+  }
+
+  pub fn set_estimated_longitude_error(&mut self, x: f32) {
+    let x_le = ::flatbuffers::EndianScalar::to_little_endian(x);
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        &x_le as *const _ as *const u8,
+        self.0[72..].as_mut_ptr(),
+        ::core::mem::size_of::<<f32 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+    }
+  }
+
+  pub fn satellites(&self) -> u8 {
+    let mut mem = ::core::mem::MaybeUninit::<<u8 as ::flatbuffers::EndianScalar>::Scalar>::uninit();
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    ::flatbuffers::EndianScalar::from_little_endian(unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        self.0[76..].as_ptr(),
+        mem.as_mut_ptr() as *mut u8,
+        ::core::mem::size_of::<<u8 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+      mem.assume_init()
+    })
+  }
+
+  pub fn set_satellites(&mut self, x: u8) {
+    let x_le = ::flatbuffers::EndianScalar::to_little_endian(x);
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        &x_le as *const _ as *const u8,
+        self.0[76..].as_mut_ptr(),
+        ::core::mem::size_of::<<u8 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+    }
+  }
+
+  pub fn valid_satellites(&self) -> u8 {
+    let mut mem = ::core::mem::MaybeUninit::<<u8 as ::flatbuffers::EndianScalar>::Scalar>::uninit();
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    ::flatbuffers::EndianScalar::from_little_endian(unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        self.0[77..].as_ptr(),
+        mem.as_mut_ptr() as *mut u8,
+        ::core::mem::size_of::<<u8 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+      mem.assume_init()
+    })
+  }
+
+  pub fn set_valid_satellites(&mut self, x: u8) {
+    let x_le = ::flatbuffers::EndianScalar::to_little_endian(x);
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    unsafe {
+      ::core::ptr::copy_nonoverlapping(
+        &x_le as *const _ as *const u8,
+        self.0[77..].as_mut_ptr(),
+        ::core::mem::size_of::<<u8 as ::flatbuffers::EndianScalar>::Scalar>(),
+      );
+    }
+  }
+
+}
+
 pub enum SensorFrameOffset {}
 #[derive(Copy, Clone, PartialEq)]
 
@@ -29,24 +668,7 @@ impl<'a> ::flatbuffers::Follow<'a> for SensorFrame<'a> {
 }
 
 impl<'a> SensorFrame<'a> {
-  pub const VT_GYRO_X: ::flatbuffers::VOffsetT = 4;
-  pub const VT_GYRO_Y: ::flatbuffers::VOffsetT = 6;
-  pub const VT_GYRO_Z: ::flatbuffers::VOffsetT = 8;
-  pub const VT_ACCEL_X: ::flatbuffers::VOffsetT = 10;
-  pub const VT_ACCEL_Y: ::flatbuffers::VOffsetT = 12;
-  pub const VT_ACCEL_Z: ::flatbuffers::VOffsetT = 14;
-  pub const VT_TEMPERATURE: ::flatbuffers::VOffsetT = 16;
-  pub const VT_PRESSURE: ::flatbuffers::VOffsetT = 18;
-  pub const VT_ALTITUDE: ::flatbuffers::VOffsetT = 20;
-  pub const VT_SPEED: ::flatbuffers::VOffsetT = 22;
-  pub const VT_HEADING: ::flatbuffers::VOffsetT = 24;
-  pub const VT_LATITUDE: ::flatbuffers::VOffsetT = 26;
-  pub const VT_LONGITUDE: ::flatbuffers::VOffsetT = 28;
-  pub const VT_ESTIMATED_SPEED_ERROR: ::flatbuffers::VOffsetT = 30;
-  pub const VT_ESTIMATED_LATITUDE_ERROR: ::flatbuffers::VOffsetT = 32;
-  pub const VT_ESTIMATED_LONGITUDE_ERROR: ::flatbuffers::VOffsetT = 34;
-  pub const VT_SATELLITES: ::flatbuffers::VOffsetT = 36;
-  pub const VT_VALID_SATELLITES: ::flatbuffers::VOffsetT = 38;
+  pub const VT_DATA: ::flatbuffers::VOffsetT = 4;
 
   #[inline]
   pub unsafe fn init_from_table(table: ::flatbuffers::Table<'a>) -> Self {
@@ -55,156 +677,20 @@ impl<'a> SensorFrame<'a> {
   #[allow(unused_mut)]
   pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: ::flatbuffers::Allocator + 'bldr>(
     _fbb: &'mut_bldr mut ::flatbuffers::FlatBufferBuilder<'bldr, A>,
-    args: &'args SensorFrameArgs
+    args: &'args SensorFrameArgs<'args>
   ) -> ::flatbuffers::WIPOffset<SensorFrame<'bldr>> {
     let mut builder = SensorFrameBuilder::new(_fbb);
-    builder.add_longitude(args.longitude);
-    builder.add_latitude(args.latitude);
-    builder.add_estimated_longitude_error(args.estimated_longitude_error);
-    builder.add_estimated_latitude_error(args.estimated_latitude_error);
-    builder.add_estimated_speed_error(args.estimated_speed_error);
-    builder.add_heading(args.heading);
-    builder.add_speed(args.speed);
-    builder.add_altitude(args.altitude);
-    builder.add_pressure(args.pressure);
-    builder.add_temperature(args.temperature);
-    builder.add_accel_z(args.accel_z);
-    builder.add_accel_y(args.accel_y);
-    builder.add_accel_x(args.accel_x);
-    builder.add_gyro_z(args.gyro_z);
-    builder.add_gyro_y(args.gyro_y);
-    builder.add_gyro_x(args.gyro_x);
-    builder.add_valid_satellites(args.valid_satellites);
-    builder.add_satellites(args.satellites);
+    if let Some(x) = args.data { builder.add_data(x); }
     builder.finish()
   }
 
 
   #[inline]
-  pub fn gyro_x(&self) -> f32 {
+  pub fn data(&self) -> Option<&'a SensorFrameData> {
     // Safety:
     // Created from valid Table for this object
     // which contains a valid value in this slot
-    unsafe { self._tab.get::<f32>(SensorFrame::VT_GYRO_X, Some(0.0)).unwrap()}
-  }
-  #[inline]
-  pub fn gyro_y(&self) -> f32 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<f32>(SensorFrame::VT_GYRO_Y, Some(0.0)).unwrap()}
-  }
-  #[inline]
-  pub fn gyro_z(&self) -> f32 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<f32>(SensorFrame::VT_GYRO_Z, Some(0.0)).unwrap()}
-  }
-  #[inline]
-  pub fn accel_x(&self) -> f32 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<f32>(SensorFrame::VT_ACCEL_X, Some(0.0)).unwrap()}
-  }
-  #[inline]
-  pub fn accel_y(&self) -> f32 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<f32>(SensorFrame::VT_ACCEL_Y, Some(0.0)).unwrap()}
-  }
-  #[inline]
-  pub fn accel_z(&self) -> f32 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<f32>(SensorFrame::VT_ACCEL_Z, Some(0.0)).unwrap()}
-  }
-  #[inline]
-  pub fn temperature(&self) -> f32 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<f32>(SensorFrame::VT_TEMPERATURE, Some(0.0)).unwrap()}
-  }
-  #[inline]
-  pub fn pressure(&self) -> f32 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<f32>(SensorFrame::VT_PRESSURE, Some(0.0)).unwrap()}
-  }
-  #[inline]
-  pub fn altitude(&self) -> f32 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<f32>(SensorFrame::VT_ALTITUDE, Some(0.0)).unwrap()}
-  }
-  #[inline]
-  pub fn speed(&self) -> f32 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<f32>(SensorFrame::VT_SPEED, Some(0.0)).unwrap()}
-  }
-  #[inline]
-  pub fn heading(&self) -> f32 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<f32>(SensorFrame::VT_HEADING, Some(0.0)).unwrap()}
-  }
-  #[inline]
-  pub fn latitude(&self) -> f64 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<f64>(SensorFrame::VT_LATITUDE, Some(0.0)).unwrap()}
-  }
-  #[inline]
-  pub fn longitude(&self) -> f64 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<f64>(SensorFrame::VT_LONGITUDE, Some(0.0)).unwrap()}
-  }
-  #[inline]
-  pub fn estimated_speed_error(&self) -> f32 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<f32>(SensorFrame::VT_ESTIMATED_SPEED_ERROR, Some(0.0)).unwrap()}
-  }
-  #[inline]
-  pub fn estimated_latitude_error(&self) -> f32 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<f32>(SensorFrame::VT_ESTIMATED_LATITUDE_ERROR, Some(0.0)).unwrap()}
-  }
-  #[inline]
-  pub fn estimated_longitude_error(&self) -> f32 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<f32>(SensorFrame::VT_ESTIMATED_LONGITUDE_ERROR, Some(0.0)).unwrap()}
-  }
-  #[inline]
-  pub fn satellites(&self) -> u8 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<u8>(SensorFrame::VT_SATELLITES, Some(0)).unwrap()}
-  }
-  #[inline]
-  pub fn valid_satellites(&self) -> u8 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<u8>(SensorFrame::VT_VALID_SATELLITES, Some(0)).unwrap()}
+    unsafe { self._tab.get::<SensorFrameData>(SensorFrame::VT_DATA, None)}
   }
 }
 
@@ -214,70 +700,19 @@ impl ::flatbuffers::Verifiable for SensorFrame<'_> {
     v: &mut ::flatbuffers::Verifier, pos: usize
   ) -> Result<(), ::flatbuffers::InvalidFlatbuffer> {
     v.visit_table(pos)?
-     .visit_field::<f32>("gyro_x", Self::VT_GYRO_X, false)?
-     .visit_field::<f32>("gyro_y", Self::VT_GYRO_Y, false)?
-     .visit_field::<f32>("gyro_z", Self::VT_GYRO_Z, false)?
-     .visit_field::<f32>("accel_x", Self::VT_ACCEL_X, false)?
-     .visit_field::<f32>("accel_y", Self::VT_ACCEL_Y, false)?
-     .visit_field::<f32>("accel_z", Self::VT_ACCEL_Z, false)?
-     .visit_field::<f32>("temperature", Self::VT_TEMPERATURE, false)?
-     .visit_field::<f32>("pressure", Self::VT_PRESSURE, false)?
-     .visit_field::<f32>("altitude", Self::VT_ALTITUDE, false)?
-     .visit_field::<f32>("speed", Self::VT_SPEED, false)?
-     .visit_field::<f32>("heading", Self::VT_HEADING, false)?
-     .visit_field::<f64>("latitude", Self::VT_LATITUDE, false)?
-     .visit_field::<f64>("longitude", Self::VT_LONGITUDE, false)?
-     .visit_field::<f32>("estimated_speed_error", Self::VT_ESTIMATED_SPEED_ERROR, false)?
-     .visit_field::<f32>("estimated_latitude_error", Self::VT_ESTIMATED_LATITUDE_ERROR, false)?
-     .visit_field::<f32>("estimated_longitude_error", Self::VT_ESTIMATED_LONGITUDE_ERROR, false)?
-     .visit_field::<u8>("satellites", Self::VT_SATELLITES, false)?
-     .visit_field::<u8>("valid_satellites", Self::VT_VALID_SATELLITES, false)?
+     .visit_field::<SensorFrameData>("data", Self::VT_DATA, false)?
      .finish();
     Ok(())
   }
 }
-pub struct SensorFrameArgs {
-    pub gyro_x: f32,
-    pub gyro_y: f32,
-    pub gyro_z: f32,
-    pub accel_x: f32,
-    pub accel_y: f32,
-    pub accel_z: f32,
-    pub temperature: f32,
-    pub pressure: f32,
-    pub altitude: f32,
-    pub speed: f32,
-    pub heading: f32,
-    pub latitude: f64,
-    pub longitude: f64,
-    pub estimated_speed_error: f32,
-    pub estimated_latitude_error: f32,
-    pub estimated_longitude_error: f32,
-    pub satellites: u8,
-    pub valid_satellites: u8,
+pub struct SensorFrameArgs<'a> {
+    pub data: Option<&'a SensorFrameData>,
 }
-impl<'a> Default for SensorFrameArgs {
+impl<'a> Default for SensorFrameArgs<'a> {
   #[inline]
   fn default() -> Self {
     SensorFrameArgs {
-      gyro_x: 0.0,
-      gyro_y: 0.0,
-      gyro_z: 0.0,
-      accel_x: 0.0,
-      accel_y: 0.0,
-      accel_z: 0.0,
-      temperature: 0.0,
-      pressure: 0.0,
-      altitude: 0.0,
-      speed: 0.0,
-      heading: 0.0,
-      latitude: 0.0,
-      longitude: 0.0,
-      estimated_speed_error: 0.0,
-      estimated_latitude_error: 0.0,
-      estimated_longitude_error: 0.0,
-      satellites: 0,
-      valid_satellites: 0,
+      data: None,
     }
   }
 }
@@ -288,76 +723,8 @@ pub struct SensorFrameBuilder<'a: 'b, 'b, A: ::flatbuffers::Allocator + 'a> {
 }
 impl<'a: 'b, 'b, A: ::flatbuffers::Allocator + 'a> SensorFrameBuilder<'a, 'b, A> {
   #[inline]
-  pub fn add_gyro_x(&mut self, gyro_x: f32) {
-    self.fbb_.push_slot::<f32>(SensorFrame::VT_GYRO_X, gyro_x, 0.0);
-  }
-  #[inline]
-  pub fn add_gyro_y(&mut self, gyro_y: f32) {
-    self.fbb_.push_slot::<f32>(SensorFrame::VT_GYRO_Y, gyro_y, 0.0);
-  }
-  #[inline]
-  pub fn add_gyro_z(&mut self, gyro_z: f32) {
-    self.fbb_.push_slot::<f32>(SensorFrame::VT_GYRO_Z, gyro_z, 0.0);
-  }
-  #[inline]
-  pub fn add_accel_x(&mut self, accel_x: f32) {
-    self.fbb_.push_slot::<f32>(SensorFrame::VT_ACCEL_X, accel_x, 0.0);
-  }
-  #[inline]
-  pub fn add_accel_y(&mut self, accel_y: f32) {
-    self.fbb_.push_slot::<f32>(SensorFrame::VT_ACCEL_Y, accel_y, 0.0);
-  }
-  #[inline]
-  pub fn add_accel_z(&mut self, accel_z: f32) {
-    self.fbb_.push_slot::<f32>(SensorFrame::VT_ACCEL_Z, accel_z, 0.0);
-  }
-  #[inline]
-  pub fn add_temperature(&mut self, temperature: f32) {
-    self.fbb_.push_slot::<f32>(SensorFrame::VT_TEMPERATURE, temperature, 0.0);
-  }
-  #[inline]
-  pub fn add_pressure(&mut self, pressure: f32) {
-    self.fbb_.push_slot::<f32>(SensorFrame::VT_PRESSURE, pressure, 0.0);
-  }
-  #[inline]
-  pub fn add_altitude(&mut self, altitude: f32) {
-    self.fbb_.push_slot::<f32>(SensorFrame::VT_ALTITUDE, altitude, 0.0);
-  }
-  #[inline]
-  pub fn add_speed(&mut self, speed: f32) {
-    self.fbb_.push_slot::<f32>(SensorFrame::VT_SPEED, speed, 0.0);
-  }
-  #[inline]
-  pub fn add_heading(&mut self, heading: f32) {
-    self.fbb_.push_slot::<f32>(SensorFrame::VT_HEADING, heading, 0.0);
-  }
-  #[inline]
-  pub fn add_latitude(&mut self, latitude: f64) {
-    self.fbb_.push_slot::<f64>(SensorFrame::VT_LATITUDE, latitude, 0.0);
-  }
-  #[inline]
-  pub fn add_longitude(&mut self, longitude: f64) {
-    self.fbb_.push_slot::<f64>(SensorFrame::VT_LONGITUDE, longitude, 0.0);
-  }
-  #[inline]
-  pub fn add_estimated_speed_error(&mut self, estimated_speed_error: f32) {
-    self.fbb_.push_slot::<f32>(SensorFrame::VT_ESTIMATED_SPEED_ERROR, estimated_speed_error, 0.0);
-  }
-  #[inline]
-  pub fn add_estimated_latitude_error(&mut self, estimated_latitude_error: f32) {
-    self.fbb_.push_slot::<f32>(SensorFrame::VT_ESTIMATED_LATITUDE_ERROR, estimated_latitude_error, 0.0);
-  }
-  #[inline]
-  pub fn add_estimated_longitude_error(&mut self, estimated_longitude_error: f32) {
-    self.fbb_.push_slot::<f32>(SensorFrame::VT_ESTIMATED_LONGITUDE_ERROR, estimated_longitude_error, 0.0);
-  }
-  #[inline]
-  pub fn add_satellites(&mut self, satellites: u8) {
-    self.fbb_.push_slot::<u8>(SensorFrame::VT_SATELLITES, satellites, 0);
-  }
-  #[inline]
-  pub fn add_valid_satellites(&mut self, valid_satellites: u8) {
-    self.fbb_.push_slot::<u8>(SensorFrame::VT_VALID_SATELLITES, valid_satellites, 0);
+  pub fn add_data(&mut self, data: &SensorFrameData) {
+    self.fbb_.push_slot_always::<&SensorFrameData>(SensorFrame::VT_DATA, data);
   }
   #[inline]
   pub fn new(_fbb: &'b mut ::flatbuffers::FlatBufferBuilder<'a, A>) -> SensorFrameBuilder<'a, 'b, A> {
@@ -377,24 +744,7 @@ impl<'a: 'b, 'b, A: ::flatbuffers::Allocator + 'a> SensorFrameBuilder<'a, 'b, A>
 impl ::core::fmt::Debug for SensorFrame<'_> {
   fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
     let mut ds = f.debug_struct("SensorFrame");
-      ds.field("gyro_x", &self.gyro_x());
-      ds.field("gyro_y", &self.gyro_y());
-      ds.field("gyro_z", &self.gyro_z());
-      ds.field("accel_x", &self.accel_x());
-      ds.field("accel_y", &self.accel_y());
-      ds.field("accel_z", &self.accel_z());
-      ds.field("temperature", &self.temperature());
-      ds.field("pressure", &self.pressure());
-      ds.field("altitude", &self.altitude());
-      ds.field("speed", &self.speed());
-      ds.field("heading", &self.heading());
-      ds.field("latitude", &self.latitude());
-      ds.field("longitude", &self.longitude());
-      ds.field("estimated_speed_error", &self.estimated_speed_error());
-      ds.field("estimated_latitude_error", &self.estimated_latitude_error());
-      ds.field("estimated_longitude_error", &self.estimated_longitude_error());
-      ds.field("satellites", &self.satellites());
-      ds.field("valid_satellites", &self.valid_satellites());
+      ds.field("data", &self.data());
       ds.finish()
   }
 }
