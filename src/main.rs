@@ -18,10 +18,19 @@ fn main() {
     let mut publisher = Publisher::new().expect("Should be able to create a publisher");
     let mut sensors = TomSensors::init().expect("Should be able to initialize sensors");
 
+    let mut has_allocated_tism = publisher.has_allocated_tism();
+
     loop {
         sensors.update();
 
         let frame = sensors.data();
         publisher.publish_frame(frame.clone()).unwrap();
+
+        let allocated_status = publisher.has_allocated_tism();
+
+        if has_allocated_tism != allocated_status && allocated_status {
+            println!("Allocated the TISM allocation!");
+            has_allocated_tism = allocated_status;
+        }
     }
 }

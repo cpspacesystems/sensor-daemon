@@ -64,4 +64,9 @@ impl Publisher {
         self.shm.write(arr)?;
         Ok(())
     }
+
+    /// Returns `true` is the TISM allocation (which is lazy) has been allocated.
+    pub fn has_allocated_tism(&self) -> bool {
+        self.shm.has_allocated()
+    }
 }
