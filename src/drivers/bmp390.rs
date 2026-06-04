@@ -327,6 +327,9 @@ fn setup(bus: &mut i2c::Bus, sdo_vddio: bool) -> io::Result<i2c::Address> {
         ));
     }
 
+    // enable measurement
+    bus.write(addr, &mut [Register::PwrCtrl as _, 0x3B])?;
+
     Ok(addr)
 }
 
