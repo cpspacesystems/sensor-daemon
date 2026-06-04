@@ -269,10 +269,10 @@ impl Icm20948 {
         }
 
         self.accel_scale = match scale {
-            AccelerometerScale::Scale2G => 2f32,
-            AccelerometerScale::Scale4G => 4f32,
-            AccelerometerScale::Scale8G => 4f32,
-            AccelerometerScale::Scale16G => 16f32,
+            AccelerometerScale::Scale2G => 2f32.powi(15) / 2f32,
+            AccelerometerScale::Scale4G => 2f32.powi(15) / 4f32,
+            AccelerometerScale::Scale8G => 2f32.powi(15) / 8f32,
+            AccelerometerScale::Scale16G => 2f32.powi(15) / 16f32,
         };
 
         Ok(())
